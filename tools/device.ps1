@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('install','check','sample','camera')][string]$Action = 'install',
+    [ValidateSet('install','check','video','sample','camera')][string]$Action = 'install',
     [string]$Serial = '',
     [string]$Sdk = "$env:LOCALAPPDATA\Android\Sdk"
 )
@@ -20,7 +20,7 @@ Push-Location $root
 try {
     $remote = '/data/local/tmp/fah-android'
     $appFiles = '/sdcard/Android/data/dev.fah.android/files'
-    if ($Action -eq 'install' -or $Action -eq 'check') {
+    if ($Action -eq 'install' -or $Action -eq 'check' -or $Action -eq 'video') {
         & ./gradlew.bat :app:assembleDebug
         if ($LASTEXITCODE) { throw 'Android build failed' }
     }
@@ -30,7 +30,7 @@ try {
         Adb push models/pose.ncnn.param models/pose.ncnn.bin models/detector.ncnn.param models/detector.ncnn.bin models/uv_grid.f32 models/sample.png "$appFiles/models/"
         Adb shell pm grant dev.fah.android android.permission.CAMERA
         Adb shell am start -n dev.fah.android/.MainActivity
-    } elseif ($Action -eq 'check') {
+    } elseif ($Action -eq 'check' -or $Action -eq 'video') {
         Adb shell am force-stop dev.fah.android
         Adb shell mkdir -p $remote
         $binary = Get-ChildItem app/build/intermediates/cxx/Debug -Recurse -Filter fah-check | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
@@ -38,6 +38,11 @@ try {
         Adb push "$Sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "$remote/"
         Adb shell chmod 755 "$remote/fah-check"
         Adb push models/pose.ncnn.param models/pose.ncnn.bin models/detector.ncnn.param models/detector.ncnn.bin models/uv_grid.f32 models/sample.rgba models/fixtures "$remote/"
+        if ($Action -eq 'video') {
+            & .venv/Scripts/python.exe tools/check_video.py --adb $adbExe --serial $Serial --remote $remote
+            if ($LASTEXITCODE) { throw 'Video validation failed' }
+            return
+        }
         $fixtureFiles = @('img','rays','cond','reference0','reference1','reference2','reference3','reference4','reference5') | ForEach-Object { "models/$_.f32" }
         Adb push @fixtureFiles "$remote/"
         foreach ($backend in @('cpu','gpu')) {

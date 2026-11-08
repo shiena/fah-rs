@@ -24,7 +24,8 @@ The implementation isn't an automatic translation of Metal code.
 Pose estimation, including residual calculations, uses FP32.
 The app doesn't use FP16 because that path failed the numerical accuracy checks.
 
-C++ code crops images and maps output coordinates back to the original image.
+Rust handles JNI, image cropping, coordinate restoration, tracking, and the validation command.
+A C ABI adapter retains ncnn model execution and custom Vulkan layers in C++.
 3D coordinates use the camera coordinate system, in meters.
 Camera intrinsics are estimated from the image dimensions.
 Accuracy with calibrated device camera intrinsics hasn't been evaluated.
@@ -49,6 +50,12 @@ The Android SDK also requires `platforms;android-36`.
 Other Android devices haven't been tested.
 
 ## Set up the app
+
+Install Rust 1.87 or later and Cargo. Add Cargo to `PATH`, then install the Android target.
+
+```powershell
+rustup target add aarch64-linux-android
+```
 
 The default SDK path is `$env:LOCALAPPDATA\Android\Sdk`.
 Initial setup downloads the models and dependencies.
@@ -140,17 +147,45 @@ Measurements are saved to `artifacts/validation.json`, and logs are saved to `ar
 The standalone model benchmarks exclude model loading and the first two inference runs.
 For the initial device test results, see the [validation report (Japanese)](docs/validation.md).
 
+### Validate a sample video
+
+Install FFmpeg and add it to `PATH`, then run:
+
+```powershell
+.\tools\device.ps1 -Action video
+```
+
+The command extracts 30 distinct frames at 5 FPS from the published selfie video, starting at 5 seconds.
+It uses the source-image panel (640 × 426) and runs the frames sequentially on Android.
+It checks finite joint coordinates, tracking, periodic detection, and absence of CPU fallback.
+Results are saved to `artifacts/video-validation.json`. This is a smoke test, not a ground-truth accuracy evaluation.
+
+### Test the Rust code
+
+```powershell
+cargo test --manifest-path app/src/main/rust/Cargo.toml
+cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
+```
+
+Gradle builds the Rust static library through CMake using the committed Cargo lockfile.
+The app and `fah-check` link the same Rust pipeline and ncnn adapter.
+
+For the Rust migration checks, including video and APK tests, see [the recorded results](docs/rust-validation.json).
+
 ## Project structure
 
 | Path | Purpose |
 |---|---|
 | `tools/export.py` | Load the required FAH modules and convert them to ncnn. |
 | `tools/make_fixtures.py` | Generate test inputs and PyTorch reference outputs. |
+| `app/src/main/rust/src/android.rs` | Implement JNI entry points and bitmap locking. |
+| `app/src/main/rust/src/runtime.rs` | Own native runtime handles and copy tensor outputs into Rust. |
+| `app/src/main/cpp/bridge.cpp` | Adapt the ncnn runtime to C ABI calls and contain C++ exceptions. |
 | `app/src/main/cpp/runtime.cpp` | Load ncnn models, run inference, and split GPU processing. |
 | `app/src/main/cpp/vulkan_ops.cpp` | Implement custom Vulkan matrix multiplication, reduction, GELU, and LayerNorm. |
-| `app/src/main/cpp/pipeline.cpp` | Detect hands, crop images, construct camera conditioning, restore coordinates, and track regions. |
+| `app/src/main/rust/src/pipeline.rs` | Detect hands, crop images, construct camera conditioning, restore coordinates, and track regions. |
 | `app/src/main/java/dev/fah/android/MainActivity.java` | Display the camera preview and joints. |
-| `app/src/main/cpp/check.cpp` | Run numerical comparisons and benchmarks on the device. |
+| `app/src/main/rust/src/check.rs` | Run numerical comparisons and benchmarks on the device. |
 
 ## License
 

@@ -7,8 +7,6 @@
 namespace fah {
 using Outputs = std::array<ncnn::Mat, 6>;
 std::string gpuInfo();
-std::vector<float> readFloats(const std::string& path);
-void writeFloats(const std::string& path, const ncnn::Mat& value);
 class Runtime {
 public:
     Runtime(const std::string& directory, bool gpu, bool half = false, bool detector = false);

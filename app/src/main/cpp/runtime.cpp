@@ -21,24 +21,6 @@ std::string gpuInfo() {
       << ",\"cooperative_matrix\":" << g.support_cooperative_matrix() << "}";
     return s.str();
 }
-std::vector<float> readFloats(const std::string& path) {
-    std::ifstream f(path, std::ios::binary | std::ios::ate);
-    if (!f) throw std::runtime_error("Cannot read " + path);
-    auto n = f.tellg();
-    if (n < 0 || size_t(n) % sizeof(float)) throw std::runtime_error("Invalid float file " + path);
-    std::vector<float> v(size_t(n) / sizeof(float));
-    f.seekg(0); f.read(reinterpret_cast<char*>(v.data()), n);
-    if (!f) throw std::runtime_error("Truncated file " + path);
-    return v;
-}
-void writeFloats(const std::string& path, const ncnn::Mat& value) {
-    std::ofstream f(path, std::ios::binary);
-    if (!f) throw std::runtime_error("Cannot write " + path);
-    for (int c = 0; c < value.c; ++c) {
-        const float* p = value.channel(c);
-        f.write(reinterpret_cast<const char*>(p), value.w * value.h * value.d * sizeof(float));
-    }
-}
 Runtime::Runtime(const std::string& directory, bool gpu, bool half, bool detector) {
     if (gpu && ncnn::get_gpu_count() == 0) throw std::runtime_error("Vulkan GPU unavailable");
     auto load = [&](ncnn::Net& net, const char* stem) {

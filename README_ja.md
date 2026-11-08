@@ -22,7 +22,8 @@ Metalコードを機械変換した構成ではありません。
 残差計算を含む姿勢推定はFP32を使います。
 FP16経路は精度比較を通過していないため、アプリでは使用しません。
 
-画像の切り出しと出力座標の復元はC++で実行します。
+JNI、画像の切り出し、座標復元、追跡、検証コマンドはRustで実装しています。
+ncnnのモデル実行と独自VulkanレイヤーはC++に残し、C ABIで接続しています。
 3D座標はカメラ座標系のメートル単位です。
 カメラ内部パラメーターは画像サイズから推定します。
 実機カメラの校正値を使った精度評価は未実施です。
@@ -47,6 +48,12 @@ Android SDKには`platforms;android-36`も必要です。
 他のAndroid端末では検証していません。
 
 ## 準備する
+
+Rust 1.87以降とCargoが必要です。Cargoを`PATH`に登録し、Androidターゲットを追加します。
+
+```powershell
+rustup target add aarch64-linux-android
+```
 
 SDKの既定パスは`$env:LOCALAPPDATA\Android\Sdk`です。
 初回はモデルと依存ライブラリをダウンロードします。
@@ -133,17 +140,46 @@ APKだけを別端末へコピーしても推論は動作しません。
 モデルの読み込みと初回2回の推論は、単体ベンチマークから除外します。
 詳しい初回検証結果は[検証記録](docs/validation.md)を参照します。
 
+### サンプル動画を検証する
+
+FFmpegをインストールして`PATH`に登録し、次のコマンドを実行します。
+
+```powershell
+.\tools\device.ps1 -Action video
+```
+
+公開セルフィー動画の5秒地点から、5FPSで30枚の異なるフレームを抽出します。
+元画像の領域（640×426）を切り出し、Androidで順番に推論します。
+関節座標の有限性、追跡、定期的な再検出、CPU切り替えの有無を検査します。
+結果は`artifacts/video-validation.json`に保存します。
+これは動作確認であり、正解ラベルに対する精度評価ではありません。
+
+### Rustのコードを検証する
+
+```powershell
+cargo test --manifest-path app/src/main/rust/Cargo.toml
+cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
+```
+
+GradleはCMakeからRustの静的ライブラリをビルドします。依存関係はCargo.lockで固定しています。
+アプリと`fah-check`は、共通のRustパイプラインとncnnアダプターを使います。
+
+Rust移植後の動画・APK検証結果は[検証データ](docs/rust-validation.json)を参照します。
+
 ## ファイル構成
 
 | パス | 内容 |
 |---|---|
 | `tools/export.py` | FAHの必要なモジュールだけを読み込み、ncnnへ変換 |
 | `tools/make_fixtures.py` | 比較用の入力とPyTorchの基準値を生成 |
+| `app/src/main/rust/src/android.rs` | JNI入口とビットマップのロック管理 |
+| `app/src/main/rust/src/runtime.rs` | ネイティブハンドルの所有とテンソルのコピー |
+| `app/src/main/cpp/bridge.cpp` | ncnnのC ABIアダプターとC++例外の処理 |
 | `app/src/main/cpp/runtime.cpp` | ncnnの読み込み、推論、GPU処理の分割 |
 | `app/src/main/cpp/vulkan_ops.cpp` | 独自のVulkan行列積・集約・GELU・LayerNorm |
-| `app/src/main/cpp/pipeline.cpp` | 検出、切り出し、カメラ条件、座標復元、追跡 |
+| `app/src/main/rust/src/pipeline.rs` | 検出、切り出し、カメラ条件、座標復元、追跡 |
 | `app/src/main/java/dev/fah/android/MainActivity.java` | カメラと関節表示 |
-| `app/src/main/cpp/check.cpp` | 実機の比較・計測用コマンド |
+| `app/src/main/rust/src/check.rs` | 実機の比較・計測用コマンド |
 
 ## ライセンス
 

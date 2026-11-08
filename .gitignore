@@ -1,0 +1,12 @@
+.venv/
+.gradle/
+**/build/
+**/.cxx/
+local.properties
+models/
+third_party/
+artifacts/
+__pycache__/
+*.torchscript
+*.pnnx.*
+*.ncnn.*

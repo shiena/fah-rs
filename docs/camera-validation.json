@@ -1,0 +1,25 @@
+{
+  "camera_still": {
+    "frames": 12,
+    "hands": 1,
+    "backend": "vulkan",
+    "cpu_fallback": false,
+    "median_ms": 1577.53
+  },
+  "live_cpu": {
+    "frames": 76,
+    "frames_with_hands": 68,
+    "errors": 0,
+    "first_timestamp": "11-09 04:15:41.147",
+    "last_timestamp": "11-09 04:16:16.869",
+    "median_native_ms": 376.5115
+  },
+  "live_gpu": {
+    "frames": 46,
+    "frames_with_hands": 1,
+    "cpu_fallback_frames": 0,
+    "errors": 0,
+    "first_timestamp": "11-09 04:16:36.851",
+    "last_timestamp": "11-09 04:17:25.677"
+  }
+}

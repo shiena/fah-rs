@@ -1,0 +1,249 @@
+{
+  "cpu": {
+    "backend": "cpu",
+    "runs": 10,
+    "median_ms": 280.069,
+    "fps": 3.57055,
+    "outputs": [
+      {
+        "index": 0,
+        "max": 3.12924e-06,
+        "mean": 4.65694e-07
+      },
+      {
+        "index": 1,
+        "max": 2.38419e-07,
+        "mean": 5.86475e-08
+      },
+      {
+        "index": 2,
+        "max": 4.06802e-06,
+        "mean": 2.36027e-07
+      },
+      {
+        "index": 3,
+        "max": 2.20388e-05,
+        "mean": 4.9348e-06
+      },
+      {
+        "index": 4,
+        "max": 4.76837e-07,
+        "mean": 4.76837e-07
+      },
+      {
+        "index": 5,
+        "max": 6.55651e-06,
+        "mean": 5.62519e-06
+      }
+    ],
+    "passed": true
+  },
+  "gpu": {
+    "backend": "gpu",
+    "runs": 10,
+    "median_ms": 1544.52,
+    "fps": 0.647452,
+    "outputs": [
+      {
+        "index": 0,
+        "max": 7.98702e-06,
+        "mean": 2.18334e-06
+      },
+      {
+        "index": 1,
+        "max": 2.45869e-07,
+        "mean": 7.55598e-08
+      },
+      {
+        "index": 2,
+        "max": 4.20213e-06,
+        "mean": 1.95702e-07
+      },
+      {
+        "index": 3,
+        "max": 2.66433e-05,
+        "mean": 6.48289e-06
+      },
+      {
+        "index": 4,
+        "max": 4.76837e-07,
+        "mean": 4.76837e-07
+      },
+      {
+        "index": 5,
+        "max": 8.58307e-06,
+        "mean": 4.86895e-06
+      }
+    ],
+    "passed": true
+  },
+  "fixtures": {
+    "hand_right": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 1550.06,
+      "fps": 0.645138,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 5.84126e-06,
+          "mean": 1.89069e-06
+        },
+        {
+          "index": 1,
+          "max": 1.11759e-07,
+          "mean": 2.98077e-08
+        },
+        {
+          "index": 2,
+          "max": 2.87592e-06,
+          "mean": 4.49213e-07
+        },
+        {
+          "index": 3,
+          "max": 2.88486e-05,
+          "mean": 6.19933e-06
+        },
+        {
+          "index": 4,
+          "max": 4.76837e-07,
+          "mean": 4.76837e-07
+        },
+        {
+          "index": 5,
+          "max": 4.33922e-05,
+          "mean": 2.74181e-05
+        }
+      ],
+      "passed": true
+    },
+    "hand_mirrored": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 1544.85,
+      "fps": 0.647313,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 5.24521e-06,
+          "mean": 1.51311e-06
+        },
+        {
+          "index": 1,
+          "max": 1.546e-07,
+          "mean": 3.95133e-08
+        },
+        {
+          "index": 2,
+          "max": 6.85453e-06,
+          "mean": 5.80232e-07
+        },
+        {
+          "index": 3,
+          "max": 5.05447e-05,
+          "mean": 9.81479e-06
+        },
+        {
+          "index": 4,
+          "max": 2.38419e-07,
+          "mean": 2.38419e-07
+        },
+        {
+          "index": 5,
+          "max": 1.33514e-05,
+          "mean": 6.67572e-06
+        }
+      ],
+      "passed": true
+    },
+    "hand_lower": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 1541.78,
+      "fps": 0.648601,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 7.03335e-06,
+          "mean": 1.80071e-06
+        },
+        {
+          "index": 1,
+          "max": 1.75089e-07,
+          "mean": 3.43764e-08
+        },
+        {
+          "index": 2,
+          "max": 6.67572e-06,
+          "mean": 6.22709e-07
+        },
+        {
+          "index": 3,
+          "max": 5.28097e-05,
+          "mean": 1.58144e-05
+        },
+        {
+          "index": 4,
+          "max": 1.19209e-07,
+          "mean": 1.19209e-07
+        },
+        {
+          "index": 5,
+          "max": 7.62939e-06,
+          "mean": 7.15256e-06
+        }
+      ],
+      "passed": true
+    },
+    "wide_crop": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 1549.22,
+      "fps": 0.645487,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 4.47035e-06,
+          "mean": 1.62314e-06
+        },
+        {
+          "index": 1,
+          "max": 1.17347e-07,
+          "mean": 3.12511e-08
+        },
+        {
+          "index": 2,
+          "max": 4.23193e-06,
+          "mean": 4.56283e-07
+        },
+        {
+          "index": 3,
+          "max": 3.33786e-05,
+          "mean": 6.60857e-06
+        },
+        {
+          "index": 4,
+          "max": 2.38419e-07,
+          "mean": 2.38419e-07
+        },
+        {
+          "index": 5,
+          "max": 3.71933e-05,
+          "mean": 2.3365e-05
+        }
+      ],
+      "passed": true
+    }
+  },
+  "pipeline": {
+    "input": "FAH published selfie example; same frame repeated",
+    "frames": 12,
+    "hands": 2,
+    "median_ms": 3153.115,
+    "tracking_median_ms": 3151.8450000000003,
+    "detection_frames": [
+      1,
+      11
+    ]
+  }
+}

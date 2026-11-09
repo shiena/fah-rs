@@ -1,0 +1,18 @@
+[package]
+name = "fah-apple"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fah_apple"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+fah-api = { path = "../../crates/fah-api" }
+fah-application = { path = "../../crates/fah-application" }
+fah-core = { path = "../../crates/fah-core" }
+anyhow = "1"
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

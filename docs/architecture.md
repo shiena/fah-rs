@@ -68,7 +68,9 @@ cargo check -p fah-windows --lib --no-default-features --release --locked
 cargo tree -p fah-windows --no-default-features
 ```
 
-これはRust内のAPI分離です。UnityのP/InvokeやGodotのGDExtensionで使う公開ABIはまだありません。今後のバインディング層では、セッションハンドルとフレーム・結果の所有権を変換し、この境界へ接続します。Rustのtraitや`serde_json::Value`をそのままDLLの公開ABIにはしません。
+Rustのtraitや`serde_json::Value`をそのままDLLの公開ABIにはしません。Apple連携用には`apple/include/fah_apple.h`のC境界を追加しています。セッションハンドル、RGBA8入力、JSON結果、ネットワーク実行コールバックを受け渡します。UnityのP/InvokeやGodotのGDExtension用バインディングは未実装です。
+
+macOS／iOSは移植元のMetal姿勢推論とCore ML検出器を使います。切り出し・座標変換・追跡は同じRust共通層が担当します。Swift側の`FrameInput`で映像入力を分離しています。[Apple向けビルド手順と検証範囲](../apple/README.md)を参照してください。
 
 ## 所有権と終了処理
 

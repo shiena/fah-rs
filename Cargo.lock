@@ -1295,6 +1295,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fah-apple"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-application",
+ "fah-core",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "fah-application"
 version = "0.1.0"
 dependencies = [

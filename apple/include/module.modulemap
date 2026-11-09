@@ -1,0 +1,4 @@
+module FAHCore {
+    header "fah_apple.h"
+    export *
+}

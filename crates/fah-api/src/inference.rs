@@ -9,6 +9,7 @@ pub enum Backend {
     DirectMl,
     Cpu,
     Vulkan,
+    Metal,
 }
 impl Backend {
     pub fn name(self) -> &'static str {
@@ -18,6 +19,7 @@ impl Backend {
             Self::DirectMl => "directml",
             Self::Cpu => "cpu",
             Self::Vulkan => "vulkan",
+            Self::Metal => "metal",
         }
     }
     pub fn parse(value: &str) -> Result<Self> {
@@ -27,6 +29,7 @@ impl Backend {
             "directml" => Ok(Self::DirectMl),
             "cpu" => Ok(Self::Cpu),
             "vulkan" => Ok(Self::Vulkan),
+            "metal" => Ok(Self::Metal),
             _ => bail!("Unknown backend: {value}"),
         }
     }

@@ -1,5 +1,7 @@
 # fah-android
 
+macOS／iOS向けのMetalアダプターを追加しています。[ビルド手順と検証状況](apple/README.md)を参照してください。
+
 GUI・共通API・アプリケーション・追跡コア・プラットフォームの5層と映像入力アダプターを分離しています。[構成とUnity・Godot向けの接続境界](docs/architecture.md)を参照してください。
 
 Windows版も利用できます。GPUIのGUIで画像・動画・USBカメラを処理します。[ビルドと使い方](windows/README_ja.md)を参照してください。

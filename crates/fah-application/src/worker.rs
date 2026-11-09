@@ -97,10 +97,10 @@ fn run(
                             id,
                             format!(
                                 "{} / {}",
-                                if active_backend == Backend::Vulkan {
-                                    "ncnn"
-                                } else {
-                                    "ONNX"
+                                match active_backend {
+                                    Backend::Vulkan => "ncnn",
+                                    Backend::Metal => "Metal",
+                                    _ => "ONNX",
                                 },
                                 active_backend.name()
                             ),

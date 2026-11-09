@@ -1,0 +1,4 @@
+/Artifacts/
+/.build/
+/.swiftpm/
+/Package.resolved

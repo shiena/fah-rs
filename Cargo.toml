@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "windows", "app/src/main/rust"]
+members = ["crates/*", "windows", "app/src/main/rust", "apple/rust"]
 default-members = ["windows"]
 resolver = "2"
 

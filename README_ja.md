@@ -1,4 +1,4 @@
-# fah-android
+# fah-rs
 
 Unity・Godot向けの共通C ABIを追加しました。[ビルド手順・C/C#サンプル・検証範囲](engines/README.md)を参照してください。
 

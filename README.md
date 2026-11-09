@@ -1,4 +1,4 @@
-# fah-android
+# fah-rs
 
 A GUI-free C ABI supports engine integration on Windows, Android, macOS, iOS, and Linux. See the [build guide, C/C# examples, and validation scope](engines/README.md) (Japanese).
 

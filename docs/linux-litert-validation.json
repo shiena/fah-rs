@@ -1,0 +1,1045 @@
+{
+  "date": "2026-11-10",
+  "device": "Steam Deck, AMD Custom APU 0405 / GPU 0405, SteamOS 3.8.28",
+  "build": "Existing ncnn Linux library built on WSL Ubuntu 24.04",
+  "scope": "FP32 pose network only; no application/backend change; no camera or full video pipeline benchmark",
+  "passes": {
+    "initial": {
+      "order": [
+        "ncnn_cpu",
+        "litert_cpu",
+        "ncnn_vulkan"
+      ],
+      "backends": {
+        "ncnn_cpu": {
+          "backend": "ncnn_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 3,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                5.9604644775390625e-06,
+                3.501772880554199e-07,
+                3.993511199951172e-06,
+                3.637373447418213e-05,
+                4.76837158203125e-07,
+                1.0013580322265625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.96438950000538,
+                  "mean_ms": 189.96521410000184,
+                  "min_ms": 188.90809299998068,
+                  "max_ms": 191.21782299998813
+                },
+                {
+                  "median_ms": 189.69652650001478,
+                  "mean_ms": 189.10654350000016,
+                  "min_ms": 182.52142200000776,
+                  "max_ms": 190.54600199999072
+                },
+                {
+                  "median_ms": 191.57565099999374,
+                  "mean_ms": 191.66362450000065,
+                  "min_ms": 188.69126999999253,
+                  "max_ms": 195.96378299999628
+                }
+              ],
+              "median_ms": 189.91170550000902
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                3.993511199951172e-06,
+                1.6810372471809387e-07,
+                6.943941116333008e-06,
+                4.673004150390625e-05,
+                1.1920928955078125e-07,
+                5.7220458984375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 193.06314499999644,
+                  "mean_ms": 199.78396869999528,
+                  "min_ms": 185.71485800001142,
+                  "max_ms": 229.483431999995
+                },
+                {
+                  "median_ms": 190.29605499999036,
+                  "mean_ms": 191.23744610000415,
+                  "min_ms": 187.82834400002457,
+                  "max_ms": 200.84351099998798
+                },
+                {
+                  "median_ms": 191.53247050000743,
+                  "mean_ms": 191.22169139999983,
+                  "min_ms": 186.10915599998634,
+                  "max_ms": 196.29466500001058
+                }
+              ],
+              "median_ms": 191.2566934999944
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                1.1324882507324219e-06,
+                1.564621925354004e-07,
+                9.924173355102539e-06,
+                6.133317947387695e-05,
+                3.5762786865234375e-07,
+                7.62939453125e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.68551399999,
+                  "mean_ms": 189.38507649999394,
+                  "min_ms": 186.018421,
+                  "max_ms": 191.67226700000128
+                },
+                {
+                  "median_ms": 190.06737749998592,
+                  "mean_ms": 189.86565849999977,
+                  "min_ms": 186.28888300000312,
+                  "max_ms": 193.83732700001133
+                },
+                {
+                  "median_ms": 189.28414049999276,
+                  "mean_ms": 188.72351180000067,
+                  "min_ms": 186.1835390000124,
+                  "max_ms": 190.85696099998017
+                }
+              ],
+              "median_ms": 189.56604350000816
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                8.940696716308594e-07,
+                1.1920928955078125e-07,
+                2.637505531311035e-06,
+                2.956390380859375e-05,
+                2.384185791015625e-07,
+                3.147125244140625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 190.91339100000937,
+                  "mean_ms": 190.4551512000097,
+                  "min_ms": 186.42873999999665,
+                  "max_ms": 194.77414100001056
+                },
+                {
+                  "median_ms": 190.42323400000782,
+                  "mean_ms": 193.84158830000047,
+                  "min_ms": 186.5104990000077,
+                  "max_ms": 215.80109499998912
+                },
+                {
+                  "median_ms": 189.82909800000414,
+                  "mean_ms": 189.6954084000015,
+                  "min_ms": 186.65115100000662,
+                  "max_ms": 192.34223600000178
+                }
+              ],
+              "median_ms": 190.43149249999658
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                8.940696716308594e-07,
+                1.1548399925231934e-07,
+                6.854534149169922e-06,
+                5.14984130859375e-05,
+                0.0,
+                5.459785461425781e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.5760120000034,
+                  "mean_ms": 189.1621069999985,
+                  "min_ms": 184.842548000006,
+                  "max_ms": 192.70222899999112
+                },
+                {
+                  "median_ms": 191.85997499999985,
+                  "mean_ms": 191.704115400006,
+                  "min_ms": 185.7666340000037,
+                  "max_ms": 196.93603600001097
+                },
+                {
+                  "median_ms": 195.67149799999584,
+                  "mean_ms": 195.6586972999986,
+                  "min_ms": 191.87115400001176,
+                  "max_ms": 199.2744959999868
+                }
+              ],
+              "median_ms": 192.01083650000328
+            }
+          },
+          "initialization_ms": 71.11319899999557
+        },
+        "litert_cpu": {
+          "backend": "litert_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 3,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "pose.tflite": "c59fa57341354537fe3672557251a95a656ceef2068a20278f870726bea68ca4"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                1.8477439880371094e-06,
+                1.6763806343078613e-07,
+                2.4437904357910156e-06,
+                6.258487701416016e-06,
+                3.5762786865234375e-07,
+                6.85080885887146e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 132.93040700000347,
+                  "mean_ms": 132.72400779999884,
+                  "min_ms": 131.77203499998313,
+                  "max_ms": 133.28867499998864
+                },
+                {
+                  "median_ms": 132.91895149998822,
+                  "mean_ms": 133.75845890000164,
+                  "min_ms": 131.98698399997966,
+                  "max_ms": 143.00115599999685
+                },
+                {
+                  "median_ms": 131.92663549999395,
+                  "mean_ms": 132.6903984999973,
+                  "min_ms": 130.71406399998864,
+                  "max_ms": 139.1706670000019
+                }
+              ],
+              "median_ms": 132.7094560000006
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                3.0994415283203125e-06,
+                1.341104507446289e-07,
+                5.647540092468262e-06,
+                1.8715858459472656e-05,
+                1.430511474609375e-06,
+                1.621246337890625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 131.94571200000382,
+                  "mean_ms": 131.8119098000068,
+                  "min_ms": 130.60788399999979,
+                  "max_ms": 133.35511000002498
+                },
+                {
+                  "median_ms": 131.68381250000039,
+                  "mean_ms": 131.6981268999939,
+                  "min_ms": 130.87653200000204,
+                  "max_ms": 132.8161909999892
+                },
+                {
+                  "median_ms": 131.5440945000006,
+                  "mean_ms": 131.62378720000447,
+                  "min_ms": 130.72631500000398,
+                  "max_ms": 132.86725200001115
+                }
+              ],
+              "median_ms": 131.80292449999342
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                6.556510925292969e-07,
+                1.341104507446289e-07,
+                7.539987564086914e-06,
+                2.3186206817626953e-05,
+                3.5762786865234375e-07,
+                5.7220458984375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 132.02946249998604,
+                  "mean_ms": 132.08766819999198,
+                  "min_ms": 131.32383899997535,
+                  "max_ms": 133.03948199998672
+                },
+                {
+                  "median_ms": 131.40578000000858,
+                  "mean_ms": 132.08453539999994,
+                  "min_ms": 130.6837079999923,
+                  "max_ms": 138.79581300000154
+                },
+                {
+                  "median_ms": 131.94877549999262,
+                  "mean_ms": 131.89949690000162,
+                  "min_ms": 131.14618800000244,
+                  "max_ms": 132.84829300002343
+                }
+              ],
+              "median_ms": 131.83995350000544
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                7.152557373046875e-07,
+                1.2665987014770508e-07,
+                3.993511199951172e-06,
+                2.3365020751953125e-05,
+                4.76837158203125e-07,
+                3.3855438232421875e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 132.01778450000745,
+                  "mean_ms": 132.02924550000432,
+                  "min_ms": 131.25620700000695,
+                  "max_ms": 132.81733299999132
+                },
+                {
+                  "median_ms": 131.8188154999973,
+                  "mean_ms": 132.09317989999647,
+                  "min_ms": 131.01194899999768,
+                  "max_ms": 134.9839700000075
+                },
+                {
+                  "median_ms": 133.8552735000036,
+                  "mean_ms": 135.00032190000013,
+                  "min_ms": 131.33823199999028,
+                  "max_ms": 141.65552199997933
+                }
+              ],
+              "median_ms": 132.14845499999228
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                4.76837158203125e-07,
+                1.126900315284729e-07,
+                3.4868717193603516e-06,
+                2.9087066650390625e-05,
+                2.384185791015625e-07,
+                1.9788742065429688e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 132.1348344999933,
+                  "mean_ms": 132.80396339999925,
+                  "min_ms": 131.06913400000053,
+                  "max_ms": 138.8586690000011
+                },
+                {
+                  "median_ms": 131.8303589999914,
+                  "mean_ms": 131.70391789999485,
+                  "min_ms": 130.50403299999402,
+                  "max_ms": 132.5837349999972
+                },
+                {
+                  "median_ms": 132.01747649999618,
+                  "mean_ms": 132.29662609999195,
+                  "min_ms": 131.19248099999936,
+                  "max_ms": 133.16480499997851
+                }
+              ],
+              "median_ms": 132.039079000009
+            }
+          },
+          "runtime_version": "2.3.0",
+          "initialization_ms": 76.80473300001722
+        },
+        "ncnn_vulkan": {
+          "backend": "ncnn_vulkan",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 3,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                9.059906005859375e-06,
+                2.3469328880310059e-07,
+                4.202127456665039e-06,
+                2.2739171981811523e-05,
+                5.960464477539062e-07,
+                6.340444087982178e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 150.96992050000324,
+                  "mean_ms": 153.5986424999976,
+                  "min_ms": 131.92473199998744,
+                  "max_ms": 175.69009700000038
+                },
+                {
+                  "median_ms": 124.54827099999477,
+                  "mean_ms": 125.38921170000208,
+                  "min_ms": 123.62241900001436,
+                  "max_ms": 129.80957899998202
+                },
+                {
+                  "median_ms": 124.15780099999552,
+                  "mean_ms": 124.15347779999877,
+                  "min_ms": 122.49942799999758,
+                  "max_ms": 124.94366199999263
+                }
+              ],
+              "median_ms": 124.94103199999529
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                5.781650543212891e-06,
+                1.341104507446289e-07,
+                8.031725883483887e-06,
+                4.494190216064453e-05,
+                1.1920928955078125e-07,
+                3.337860107421875e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.59633800000347,
+                  "mean_ms": 124.6110965999975,
+                  "min_ms": 123.59709300000077,
+                  "max_ms": 125.75092199998039
+                },
+                {
+                  "median_ms": 124.28830049999817,
+                  "mean_ms": 124.26067629999977,
+                  "min_ms": 122.97887500000115,
+                  "max_ms": 125.06137599999079
+                },
+                {
+                  "median_ms": 124.0796845000034,
+                  "mean_ms": 124.20398599999771,
+                  "min_ms": 123.25704799999926,
+                  "max_ms": 125.30900000001566
+                }
+              ],
+              "median_ms": 124.35607550001748
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                4.827976226806641e-06,
+                1.341104507446289e-07,
+                5.900859832763672e-06,
+                3.886222839355469e-05,
+                3.5762786865234375e-07,
+                9.059906005859375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 125.31075599999042,
+                  "mean_ms": 125.62962629999674,
+                  "min_ms": 124.65552999998408,
+                  "max_ms": 126.88058699998805
+                },
+                {
+                  "median_ms": 123.91129300000614,
+                  "mean_ms": 123.99616920000369,
+                  "min_ms": 122.61555899999621,
+                  "max_ms": 125.82574000001046
+                },
+                {
+                  "median_ms": 123.93465750001553,
+                  "mean_ms": 124.01517240000715,
+                  "min_ms": 123.68001500001924,
+                  "max_ms": 124.61303000000612
+                }
+              ],
+              "median_ms": 124.39664050000943
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                6.020069122314453e-06,
+                1.0803341865539551e-07,
+                3.159046173095703e-06,
+                2.3126602172851562e-05,
+                2.384185791015625e-07,
+                3.528594970703125e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.31954199999495,
+                  "mean_ms": 124.34795119999649,
+                  "min_ms": 123.05515399998512,
+                  "max_ms": 125.54155600000172
+                },
+                {
+                  "median_ms": 124.18366200000719,
+                  "mean_ms": 124.1189262999967,
+                  "min_ms": 123.40019799998458,
+                  "max_ms": 124.7351119999962
+                },
+                {
+                  "median_ms": 124.31886849998364,
+                  "mean_ms": 124.63535839999622,
+                  "min_ms": 123.9718759999846,
+                  "max_ms": 126.64351899999815
+                }
+              ],
+              "median_ms": 124.31152400000656
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                4.708766937255859e-06,
+                8.940696716308594e-08,
+                4.26173210144043e-06,
+                3.075599670410156e-05,
+                2.384185791015625e-07,
+                1.71661376953125e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.78208800000345,
+                  "mean_ms": 124.84894760000032,
+                  "min_ms": 124.07659600000898,
+                  "max_ms": 126.3015419999931
+                },
+                {
+                  "median_ms": 124.19521499998609,
+                  "mean_ms": 124.1992668999984,
+                  "min_ms": 123.40376200000946,
+                  "max_ms": 125.04658099999233
+                },
+                {
+                  "median_ms": 124.22964500001399,
+                  "mean_ms": 124.2609299000037,
+                  "min_ms": 123.45871899998428,
+                  "max_ms": 125.48253900001782
+                }
+              ],
+              "median_ms": 124.38522099999716
+            }
+          },
+          "initialization_ms": 736.4308570000162
+        }
+      }
+    },
+    "reverse_order": {
+      "order": [
+        "ncnn_vulkan",
+        "litert_cpu",
+        "ncnn_cpu"
+      ],
+      "backends": {
+        "ncnn_vulkan": {
+          "backend": "ncnn_vulkan",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                9.059906005859375e-06,
+                2.3469328880310059e-07,
+                4.202127456665039e-06,
+                2.2739171981811523e-05,
+                5.960464477539062e-07,
+                6.340444087982178e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 153.2778179999923,
+                  "mean_ms": 155.34961859999044,
+                  "min_ms": 132.2863560000087,
+                  "max_ms": 176.69346100001349
+                }
+              ],
+              "median_ms": 153.2778179999923
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                5.781650543212891e-06,
+                1.341104507446289e-07,
+                8.031725883483887e-06,
+                4.494190216064453e-05,
+                1.1920928955078125e-07,
+                3.337860107421875e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 128.83882250000056,
+                  "mean_ms": 128.59466660000862,
+                  "min_ms": 123.2410659999914,
+                  "max_ms": 135.23733499999935
+                }
+              ],
+              "median_ms": 128.83882250000056
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                4.827976226806641e-06,
+                1.341104507446289e-07,
+                5.900859832763672e-06,
+                3.886222839355469e-05,
+                3.5762786865234375e-07,
+                9.059906005859375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.32341750002252,
+                  "mean_ms": 124.28076499999179,
+                  "min_ms": 123.07554799997433,
+                  "max_ms": 125.25735499997381
+                }
+              ],
+              "median_ms": 124.32341750002252
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                6.020069122314453e-06,
+                1.0803341865539551e-07,
+                3.159046173095703e-06,
+                2.3126602172851562e-05,
+                2.384185791015625e-07,
+                3.528594970703125e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.06409050001344,
+                  "mean_ms": 124.08358610000505,
+                  "min_ms": 123.42108500001814,
+                  "max_ms": 124.99004699998295
+                }
+              ],
+              "median_ms": 124.06409050001344
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                4.708766937255859e-06,
+                8.940696716308594e-08,
+                4.26173210144043e-06,
+                3.075599670410156e-05,
+                2.384185791015625e-07,
+                1.71661376953125e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 124.49449649997746,
+                  "mean_ms": 124.29548009999962,
+                  "min_ms": 122.6857170000244,
+                  "max_ms": 125.29750400000239
+                }
+              ],
+              "median_ms": 124.49449649997746
+            }
+          },
+          "initialization_ms": 934.8600940000154
+        },
+        "litert_cpu": {
+          "backend": "litert_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "pose.tflite": "c59fa57341354537fe3672557251a95a656ceef2068a20278f870726bea68ca4"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                1.8477439880371094e-06,
+                1.6763806343078613e-07,
+                2.4437904357910156e-06,
+                6.258487701416016e-06,
+                3.5762786865234375e-07,
+                6.85080885887146e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 142.07671799999844,
+                  "mean_ms": 142.08517489999508,
+                  "min_ms": 141.73220999998648,
+                  "max_ms": 142.48539000004712
+                }
+              ],
+              "median_ms": 142.07671799999844
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                3.0994415283203125e-06,
+                1.341104507446289e-07,
+                5.647540092468262e-06,
+                1.8715858459472656e-05,
+                1.430511474609375e-06,
+                1.621246337890625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 142.53734500002224,
+                  "mean_ms": 144.32011470001385,
+                  "min_ms": 141.8225600000369,
+                  "max_ms": 151.95171999999957
+                }
+              ],
+              "median_ms": 142.53734500002224
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                6.556510925292969e-07,
+                1.341104507446289e-07,
+                7.539987564086914e-06,
+                2.3186206817626953e-05,
+                3.5762786865234375e-07,
+                5.7220458984375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 131.08598900004154,
+                  "mean_ms": 132.8700108000021,
+                  "min_ms": 130.83826499996576,
+                  "max_ms": 148.09133999995083
+                }
+              ],
+              "median_ms": 131.08598900004154
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                7.152557373046875e-07,
+                1.2665987014770508e-07,
+                3.993511199951172e-06,
+                2.3365020751953125e-05,
+                4.76837158203125e-07,
+                3.3855438232421875e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 131.12215999998966,
+                  "mean_ms": 131.25315569999998,
+                  "min_ms": 130.26510100002042,
+                  "max_ms": 132.14713299998948
+                }
+              ],
+              "median_ms": 131.12215999998966
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                4.76837158203125e-07,
+                1.126900315284729e-07,
+                3.4868717193603516e-06,
+                2.9087066650390625e-05,
+                2.384185791015625e-07,
+                1.9788742065429688e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 131.4750610000317,
+                  "mean_ms": 131.8745698999976,
+                  "min_ms": 130.34404799998356,
+                  "max_ms": 138.03318399999398
+                }
+              ],
+              "median_ms": 131.4750610000317
+            }
+          },
+          "runtime_version": "2.3.0",
+          "initialization_ms": 100.21712299999308
+        },
+        "ncnn_cpu": {
+          "backend": "ncnn_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 2,
+          "runs_per_round": 10,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                5.9604644775390625e-06,
+                3.501772880554199e-07,
+                3.993511199951172e-06,
+                3.637373447418213e-05,
+                4.76837158203125e-07,
+                1.0013580322265625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.6008884999958,
+                  "mean_ms": 190.08685540000556,
+                  "min_ms": 186.39857200003007,
+                  "max_ms": 195.5132549999803
+                }
+              ],
+              "median_ms": 189.6008884999958
+            },
+            "hand_lower": {
+              "max_abs_errors": [
+                3.993511199951172e-06,
+                1.6810372471809387e-07,
+                6.943941116333008e-06,
+                4.673004150390625e-05,
+                1.1920928955078125e-07,
+                5.7220458984375e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.05495300001007,
+                  "mean_ms": 189.82086130000084,
+                  "min_ms": 187.15922400002682,
+                  "max_ms": 193.02109199998085
+                }
+              ],
+              "median_ms": 189.05495300001007
+            },
+            "hand_mirrored": {
+              "max_abs_errors": [
+                1.1324882507324219e-06,
+                1.564621925354004e-07,
+                9.924173355102539e-06,
+                6.133317947387695e-05,
+                3.5762786865234375e-07,
+                7.62939453125e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.31812650001234,
+                  "mean_ms": 189.65678499999967,
+                  "min_ms": 187.24604299995917,
+                  "max_ms": 192.37481200002549
+                }
+              ],
+              "median_ms": 189.31812650001234
+            },
+            "hand_right": {
+              "max_abs_errors": [
+                8.940696716308594e-07,
+                1.1920928955078125e-07,
+                2.637505531311035e-06,
+                2.956390380859375e-05,
+                2.384185791015625e-07,
+                3.147125244140625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 189.48341099999766,
+                  "mean_ms": 189.36970749999773,
+                  "min_ms": 186.08809500000234,
+                  "max_ms": 192.08004099999698
+                }
+              ],
+              "median_ms": 189.48341099999766
+            },
+            "wide_crop": {
+              "max_abs_errors": [
+                8.940696716308594e-07,
+                1.1548399925231934e-07,
+                6.854534149169922e-06,
+                5.14984130859375e-05,
+                0.0,
+                5.459785461425781e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 188.5852960000136,
+                  "mean_ms": 189.3793422999977,
+                  "min_ms": 186.56490400002212,
+                  "max_ms": 193.84488999997984
+                }
+              ],
+              "median_ms": 188.5852960000136
+            }
+          },
+          "initialization_ms": 57.84856000002492
+        }
+      }
+    },
+    "longer_warmup": {
+      "order": [
+        "litert_cpu",
+        "ncnn_cpu",
+        "ncnn_vulkan"
+      ],
+      "backends": {
+        "litert_cpu": {
+          "backend": "litert_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 10,
+          "runs_per_round": 30,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "pose.tflite": "c59fa57341354537fe3672557251a95a656ceef2068a20278f870726bea68ca4"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                1.8477439880371094e-06,
+                1.6763806343078613e-07,
+                2.4437904357910156e-06,
+                6.258487701416016e-06,
+                3.5762786865234375e-07,
+                6.85080885887146e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 141.7934434999779,
+                  "mean_ms": 140.50827719999575,
+                  "min_ms": 131.53189599995585,
+                  "max_ms": 152.7776739999922
+                }
+              ],
+              "median_ms": 141.7934434999779
+            }
+          },
+          "runtime_version": "2.3.0",
+          "initialization_ms": 100.43121500001462
+        },
+        "ncnn_cpu": {
+          "backend": "ncnn_cpu",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 10,
+          "runs_per_round": 30,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                5.9604644775390625e-06,
+                3.501772880554199e-07,
+                3.993511199951172e-06,
+                3.637373447418213e-05,
+                4.76837158203125e-07,
+                1.0013580322265625e-05
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 197.05878550001898,
+                  "mean_ms": 197.22759773333678,
+                  "min_ms": 193.5822680000001,
+                  "max_ms": 202.1833919999949
+                }
+              ],
+              "median_ms": 197.05878550001898
+            }
+          },
+          "initialization_ms": 68.53826700000809
+        },
+        "ncnn_vulkan": {
+          "backend": "ncnn_vulkan",
+          "platform": "Linux-6.18.50-valve2-1-neptune-618-gc7289a96b14d-x86_64-with-glibc2.41",
+          "python": "3.13.5",
+          "threads": 4,
+          "warmup_runs_per_fixture": 10,
+          "runs_per_round": 30,
+          "rounds": 1,
+          "timing_scope": "Pose inference and host tensor copies; excludes initialization and preprocessing",
+          "sha256": {
+            "libfah_backend.so": "244ae9948b06801f2d23addb33b85597df033463ffb4d47edcab01f4fb859972",
+            "pose.ncnn.bin": "fbe79d24ca4826db0e4987ac9c3947efb831ac156b23764455465752617f4bd8",
+            "pose.ncnn.param": "d66b3899997088e12d02b1901bc6ac39b4a70de6165b35ec33020e3ce9c49a0c"
+          },
+          "fixtures": {
+            "models": {
+              "max_abs_errors": [
+                9.059906005859375e-06,
+                2.3469328880310059e-07,
+                4.202127456665039e-06,
+                2.2739171981811523e-05,
+                5.960464477539062e-07,
+                6.340444087982178e-06
+              ],
+              "passed": true,
+              "rounds": [
+                {
+                  "median_ms": 123.78849100002753,
+                  "mean_ms": 123.99662316666422,
+                  "min_ms": 122.63500799997473,
+                  "max_ms": 128.48053599998366
+                }
+              ],
+              "median_ms": 123.78849100002753
+            }
+          },
+          "initialization_ms": 686.9676940000318
+        }
+      }
+    }
+  },
+  "summary": {
+    "median_ms": {
+      "litert_cpu": 141.7934434999779,
+      "ncnn_cpu": 197.05878550001898,
+      "ncnn_vulkan": 123.78849100002753
+    },
+    "litert_cpu_time_reduction_vs_ncnn_cpu_percent": 28.045104337677827,
+    "litert_cpu_time_increase_vs_ncnn_vulkan_percent": 14.544932533305044,
+    "accuracy": "All five fixtures passed on all three paths; repeat and longer warmup passed",
+    "timing_variation": "Reverse-order early Vulkan measurements reached 153 ms; longer warmup returned to 124 ms"
+  }
+}

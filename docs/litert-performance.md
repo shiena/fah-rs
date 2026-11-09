@@ -9,6 +9,8 @@ CPUは既存の検証入力5種類で精度検査を通過しました。
 Androidアプリと共通C ABIの既定エンジンはncnnのままです。
 LiteRTの新しいCompiledModel APIとNPU経路は、この検証には含みません。
 
+Linuxの比較結果は[Steam Deckでの検証](linux-litert-performance.md)を参照してください。
+
 ## 比較条件
 
 - CPUは4スレッド、モデルはFP32です。

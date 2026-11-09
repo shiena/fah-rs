@@ -1,3 +1,4 @@
+#![cfg(any(target_os = "macos", target_os = "ios"))]
 use anyhow::{Context, Result, bail, ensure};
 use fah_api::*;
 use fah_apple::FahMetalCallbacks;
@@ -45,9 +46,59 @@ pub struct Native {
     free: Destroy,
     // Swift/Objective-C class registration outlives individual adapters.
     // Keep the module loaded until process exit, including queued capture teardown.
-    _library: std::mem::ManuallyDrop<Library>,
+    _library: Option<std::mem::ManuallyDrop<Library>>,
 }
 impl Native {
+    /// iOS hosts link FAHAppleNative into the application instead of loading a dylib.
+    #[cfg(target_os = "ios")]
+    pub fn linked() -> Arc<Self> {
+        unsafe extern "C" {
+            fn fah_macos_runtime_create(path: *const c_char, error: *mut c_char) -> *mut c_void;
+            fn fah_macos_detect(
+                context: *mut c_void,
+                image: *const f32,
+                output: *mut f32,
+                error: *mut c_char,
+            ) -> i32;
+            fn fah_macos_pose(
+                context: *mut c_void,
+                image: *const f32,
+                ray: *const f32,
+                condition: *const f32,
+                output: *mut f32,
+                error: *mut c_char,
+            ) -> i32;
+            fn fah_macos_runtime_destroy(context: *mut c_void);
+            fn fah_macos_cameras(error: *mut c_char) -> *mut c_char;
+            fn fah_macos_input_create(
+                kind: i32,
+                path: *const c_char,
+                error: *mut c_char,
+            ) -> *mut c_void;
+            fn fah_macos_input_read(
+                context: *mut c_void,
+                data: *mut *mut u8,
+                count: *mut usize,
+                width: *mut u32,
+                height: *mut u32,
+                error: *mut c_char,
+            ) -> i32;
+            fn fah_macos_input_destroy(context: *mut c_void);
+            fn fah_macos_free(data: *mut c_void);
+        }
+        Arc::new(Self {
+            create: fah_macos_runtime_create,
+            detect: fah_macos_detect,
+            pose: fah_macos_pose,
+            destroy: fah_macos_runtime_destroy,
+            cameras: fah_macos_cameras,
+            open: fah_macos_input_create,
+            read: fah_macos_input_read,
+            close: fah_macos_input_destroy,
+            free: fah_macos_free,
+            _library: None,
+        })
+    }
     pub fn load(path: &Path) -> Result<Arc<Self>> {
         unsafe {
             let library =
@@ -64,7 +115,7 @@ impl Native {
                 read: *library.get(b"fah_macos_input_read")?,
                 close: *library.get(b"fah_macos_input_destroy")?,
                 free: *library.get(b"fah_macos_free")?,
-                _library: std::mem::ManuallyDrop::new(library),
+                _library: Some(std::mem::ManuallyDrop::new(library)),
             }))
         }
     }
@@ -217,4 +268,16 @@ pub fn controller(native: Arc<Native>) -> Client {
         Arc::new(Backends(native.clone())),
         Arc::new(Inputs(native)),
     ))
+}
+
+pub fn session(
+    native: Arc<Native>,
+    models: &Path,
+    backend: Backend,
+) -> Result<Box<dyn TrackingSession>> {
+    Ok(Box::new(fah_application::Session::open(
+        models,
+        backend,
+        Arc::new(Backends(native)),
+    )?))
 }

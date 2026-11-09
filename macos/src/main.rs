@@ -1,5 +1,5 @@
 #[cfg(target_os = "macos")]
-mod platform;
+use fah_apple_platform as platform;
 #[cfg(not(target_os = "macos"))]
 fn main() {
     eprintln!("Build fah-macos on macOS");

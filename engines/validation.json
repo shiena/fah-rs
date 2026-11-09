@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-10",
+  "abi_version": 1,
+  "windows_x64": {
+    "c_host_vulkan": {
+      "backend": "vulkan",
+      "hands": 2,
+      "finite_21_joints": true,
+      "cpu_fallback": false,
+      "total_ms": 67.64680000000001
+    },
+    "c_host_cpu": {
+      "backend": "cpu",
+      "hands": 2,
+      "finite_21_joints": true,
+      "cpu_fallback": false,
+      "total_ms": 190.5747
+    },
+    "csharp_dotnet8": {
+      "backend": "cpu",
+      "hands": 2,
+      "finite_21_joints": true,
+      "cpu_fallback": false,
+      "total_ms": 201.2654
+    },
+    "vulkan_shutdown_and_recreate_cycles": 2,
+    "clean_exit": true
+  },
+  "macos_arm64": {
+    "device": "Apple M3",
+    "c_host": {
+      "backend": "metal",
+      "hands": 2,
+      "finite_21_joints": true,
+      "cpu_fallback": false,
+      "total_ms": 76.694458
+    }
+  },
+  "android_arm64": {
+    "ndk": "30.0.16248370",
+    "shared_library_build": true,
+    "c_host_link": true,
+    "existing_android_app_build": true,
+    "device_runtime_tested": false
+  },
+  "ios_arm64": {
+    "device": "iPhone 15 Pro",
+    "os": "iOS 27.2",
+    "signed_app_install_and_launch": true,
+    "swift_host_c_abi": {
+      "backend": "metal",
+      "hands": 2,
+      "finite_21_joints": true,
+      "cpu_fallback": false,
+      "total_ms": 91.589541
+    },
+    "camera_tested": false,
+    "result_retrieved_from_device": true
+  },
+  "ffi_unit_tests": {
+    "windows": 5,
+    "macos": 5
+  },
+  "unity_editor_or_il2cpp_tested": false,
+  "godot_gdextension_tested": false,
+  "scope": "Sample-image inference through the C ABI, typed result copy and JSON retrieval, lifecycle and validation tests. Not full numerical parity or engine integration."
+}

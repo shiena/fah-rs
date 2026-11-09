@@ -1355,6 +1355,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "fah-apple-platform"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-apple",
+ "fah-application",
+ "fah-core",
+ "fah-input",
+ "libloading",
+ "serde_json",
+]
+
+[[package]]
 name = "fah-application"
 version = "0.1.0"
 dependencies = [
@@ -1370,6 +1384,19 @@ dependencies = [
 name = "fah-core"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "fah-ffi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-apple-platform",
+ "fah-application",
+ "fah-ncnn",
+ "fah-windows",
  "serde_json",
 ]
 
@@ -1399,13 +1426,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "fah-api",
- "fah-apple",
- "fah-application",
- "fah-core",
+ "fah-apple-platform",
  "fah-gui",
- "fah-input",
  "image",
- "libloading",
  "serde_json",
 ]
 
@@ -1427,6 +1450,8 @@ dependencies = [
 name = "fah-ncnn"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "fah-api",
  "fah-core",
  "serde_json",
 ]

@@ -1,6 +1,8 @@
 # fah-android
 
-An Apple adapter connects the original Metal networks to the shared Rust tracking core. See the [macOS/iOS build guide and validation status](apple/README.md) (Japanese). Camera inference is verified on an Apple M3 Mac. iOS device and Simulator builds pass; iOS device inference is unverified.
+A GUI-free C ABI supports engine integration on Windows, Android, macOS, and iOS. See the [build guide, C/C# examples, and validation scope](engines/README.md) (Japanese).
+
+An Apple adapter connects the original Metal networks to the shared Rust tracking core. See the [macOS/iOS build guide and validation status](apple/README.md) (Japanese). Camera inference is verified on an Apple M3 Mac. iOS device and Simulator builds pass; Sample-image inference through the shared C ABI is verified on an iPhone 15 Pro.
 
 The shared code is organized into GUI, API, application, tracking core, and platform layers, with separate frame-input adapters. See the [architecture and engine-integration boundaries](docs/architecture.md) (Japanese). The Windows runtime library can be built without GPUI using `--no-default-features`.
 

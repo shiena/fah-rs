@@ -11,3 +11,5 @@ doctest = false
 [dependencies]
 fah-core = { path = "../fah-core" }
 serde_json = "1"
+fah-api = { path = "../fah-api" }
+anyhow = "1"

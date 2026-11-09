@@ -11,3 +11,5 @@ The package excludes the upstream tracking pipeline, GUI, and MANO fitting.
 Local change: PoseNetwork.resolve disables tensor ops for Simulator builds,
 because MTLGPUFamily.metal4 is unavailable in the Simulator SDK. Device and macOS
 backend selection remains unchanged. The shader source is unchanged.
+
+Local change: Support.swift also searches for the shader resource bundle beside the loaded macOS native library, for engine plugin deployment.

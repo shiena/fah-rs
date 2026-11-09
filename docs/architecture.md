@@ -7,7 +7,7 @@ Unity・Godot向けのプラグイン化に備え、GUI、アプリケーショ�
 | 層 | 配置 | 責務 |
 |---|---|---|
 | GUI | `crates/fah-gui/` | GPUIの描画、操作、表示状態、ファイル選択 |
-| 共通インターフェース | `crates/fah-api/` | フレーム・結果、開始停止コマンド、通知、実装差し替え用trait |
+| 共通インターフェース | `crates/fah-api/`、`crates/fah-ffi/` | フレーム・結果、開始停止コマンド、通知、実装差し替え用trait |
 | アプリケーション処理 | `crates/fah-application/` | 推論方式の選択、同期セッション、非同期ワーカー、描画用画像の生成、結果保存 |
 | 推論・追跡コア | `crates/fah-core/` | 切り出し、座標変換、追跡、再検出、推論実装を呼び出す処理 |
 | プラットフォーム固有実装 | `windows/src/platform/`、`app/src/main/rust/src/android.rs` | WindowsのDLL探索・ロード、DirectShow入力、Android JNI・ビットマップ操作 |
@@ -70,7 +70,7 @@ cargo tree -p fah-windows --no-default-features
 
 Rustのtraitや`serde_json::Value`をそのままDLLの公開ABIにはしません。Apple連携用には`apple/include/fah_apple.h`のC境界を追加しています。セッションハンドル、RGBA8入力、JSON結果、ネットワーク実行コールバックを受け渡します。UnityのP/InvokeやGodotのGDExtension用バインディングは未実装です。
 
-macOSのGUIはWindowsと同じ`fah-gui`を使います。`macos/src/platform.rs`が共通ワーカーへMetal推論とAVFoundation入力を注入します。Swiftの`FAHAppleNative`はRustコアに依存しない動的ライブラリです。
+macOSのGUIはWindowsと同じ`fah-gui`を使います。`crates/fah-apple-platform/`が共通ワーカーへMetal推論とAVFoundation入力を注入します。Swiftの`FAHAppleNative`はRustコアに依存しない動的ライブラリです。
 
 macOS／iOSは移植元のMetal姿勢推論とCore ML検出器を使います。切り出し・座標変換・追跡は同じRust共通層が担当します。Swift側の`FrameInput`で映像入力を分離しています。[Apple向けビルド手順と検証範囲](../apple/README.md)を参照してください。
 
@@ -114,3 +114,9 @@ APKは`app/build/outputs/apk/debug/app-debug.apk`に出力されます。CMake�
 Android側の接続点は`app/src/main/rust/src/platform.rs`です。`session`は共通の`TrackingSession`を返します。対応バックエンドはncnnのCPUとVulkanです。CUDAとDirectMLを指定するとエラーを返します。
 
 JNIはBitmapから`Frame::from_rgba`で所有権付きのフレームを生成します。行末のパディングを除去し、推論前にBitmapのロックを解除します。ホストがRGBA8データを用意する場合も、このAPIを使えます。`fah-input`の静止画像入力もAndroidのビルド対象です。カメラ取得は引き続きJava側が担当します。
+
+## エンジンからC ABIを呼び出す
+
+`fah-ffi`は`Session`へ接続し、GPUIを依存に含めません。MacとiOSの推論アダプターは`fah-apple-platform`、Androidのバックエンド生成は`fah-ncnn::adapter`で既存ホストと共有します。
+
+画像はホストが供給し、処理結果はコピー用の固定長構造体またはJSONで取得します。ビルドと所有権の契約は[エンジン連携手順](../engines/README.md)を参照してください。

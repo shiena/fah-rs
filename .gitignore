@@ -10,3 +10,4 @@ __pycache__/
 *.torchscript
 *.pnnx.*
 *.ncnn.*
+/engines/ios/FAHEngineCheck.xcodeproj/

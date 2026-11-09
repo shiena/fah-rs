@@ -241,6 +241,7 @@ struct Viewer {
     image: Option<Arc<RenderImage>>,
     show_joints: bool,
     mirror_camera: bool,
+    cuda_available: bool,
 }
 impl Viewer {
     fn new(options: Options, cx: &mut Context<Self>) -> Self {
@@ -262,6 +263,7 @@ impl Viewer {
             image: None,
             show_joints: true,
             mirror_camera: false,
+            cuda_available: onnx::cuda_libraries().is_ok(),
         };
         cx.spawn(async move |view, cx| {
             loop {
@@ -565,8 +567,9 @@ impl Render for Viewer {
                     .child(div().id("camera-list").max_h(px(190.)).overflow_y_scroll().flex().flex_col().gap_2().children(camera_buttons)
                         .when(self.cameras.is_empty(),|d|d.child("カメラが見つかりません")))
                     .child(div().flex().gap_2()
-                        .child(button("camera","カメラ開始",true).on_click(cx.listener(|view,_,_,cx|{
-                            if let Some(name)=view.cameras.get(view.selected_camera).cloned() {view.start(Source::Camera(name),cx);}
+                        .child(button("camera",if self.running && matches!(self.source,Some(Source::Camera(_))) {"カメラ停止"} else {"カメラ開始"},true).on_click(cx.listener(|view,_,_,cx|{
+                            if view.running && matches!(view.source,Some(Source::Camera(_))) {view.stop(cx);}
+                            else if let Some(name)=view.cameras.get(view.selected_camera).cloned() {view.start(Source::Camera(name),cx);}
                             else {view.error=Some("使用できるカメラを選択してください".into());cx.notify();}
                         })))
                         .child(button("refresh","再検索",false).on_click(cx.listener(|view,_,_,_|{let _=view.worker.commands.send(Command::RefreshCameras);}))))
@@ -578,7 +581,11 @@ impl Render for Viewer {
                         })))
                     .child(div().mt_3().text_xs().text_color(rgb(0x8d9fb5)).child("推論"))
                     .child(div().flex().flex_wrap().gap_2().children([(Backend::Auto,"自動"),(Backend::Cuda,"CUDA"),(Backend::DirectMl,"DirectML"),(Backend::Cpu,"CPU"),(Backend::Vulkan,"Vulkan")].into_iter().map(|(backend,label)| {
-                        button(label,label,self.backend==backend).on_click(cx.listener(move |view,_,_,cx|{
+                        let enabled = backend != Backend::Cuda || self.cuda_available;
+                        button(label,if enabled {label} else {"CUDA（未導入）"},self.backend==backend)
+                        .when(!enabled, |button| button.opacity(0.4).cursor_default())
+                        .on_click(cx.listener(move |view,_,_,cx|{
+                            if !enabled {return;}
                             view.backend=backend;if let Some(source)=view.source.clone() {view.start(source,cx);}else{cx.notify();}
                         }))
                     })))

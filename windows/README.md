@@ -56,11 +56,13 @@ Vulkan uses the original ncnn model files and camera grid.
 
 ## Select a backend and input
 
-**自動** (Auto) tries CUDA, DirectML, then CPU. Each candidate must load both models and complete a warm-up inference. This catches cuDNN dependencies loaded only by the first convolution. Failed candidates are recorded in saved JSON under `initialization_warning`.
+At startup, CUDA is enabled only when its ONNX provider DLLs, CUDA runtime, cuBLAS, cuBLASLt, cuDNN, and NVIDIA driver DLL are found. Missing dependencies disable the CUDA button. Restart after installing libraries or changing PATH. File presence does not guarantee binary compatibility; model warm-up still checks that inference works.
+
+**自動** (Auto) skips CUDA when these files are missing, then tries DirectML and CPU. Available candidates must load both models and complete a warm-up inference. Failed initialization attempts are recorded in saved JSON under `initialization_warning`.
 
 Explicit **CUDA**, **DirectML**, **CPU**, or **Vulkan** selections report initialization errors without choosing another provider. An inference failure after successful initialization uses the shared pipeline's CPU recovery path; the preview and JSON show CPU. Both GPU providers use device index 0. ONNX Runtime may run unsupported operators on CPU within a GPU session.
 
-Select a camera, then click **カメラ開始** (Start camera). **再検索** refreshes the device list. **停止** releases the camera. **左右反転** mirrors the camera preview and joints, including while paused. Saved PNG/JSON results and image/video inputs remain unmirrored.
+Select a camera, then click **カメラ開始** (Start camera). The same button becomes **カメラ停止** (Stop camera) and releases the device when clicked. **再検索** refreshes the device list. **左右反転** mirrors the camera preview and joints, including while paused. Saved PNG/JSON results and image/video inputs remain unmirrored.
 
 **画像・動画を開く** opens a file. **サンプル画像** uses the sample image. The adjacent video button needs the source checkout's FAH sample video. **結果を保存** saves a PNG with joint overlays and a JSON file.
 

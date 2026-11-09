@@ -119,8 +119,57 @@ pub fn runtime_path(backend: Backend) -> Result<PathBuf> {
         )
     })
 }
+const CUDA_DEPENDENCIES: &[&str] = &[
+    "cudart64_13.dll",
+    "cublas64_13.dll",
+    "cublasLt64_13.dll",
+    "cudnn64_9.dll",
+    "nvcuda.dll",
+];
+
+fn missing_libraries(names: &[&str], directories: &[PathBuf]) -> Vec<String> {
+    names
+        .iter()
+        .filter(|name| !directories.iter().any(|dir| dir.join(name).is_file()))
+        .map(|name| (*name).to_owned())
+        .collect()
+}
+
+/// Check files before loading CUDA or constructing either model.
+pub fn cuda_libraries() -> Result<()> {
+    let runtime = runtime_path(Backend::Cuda)?;
+    let runtime_dir = runtime.parent().unwrap().to_path_buf();
+    let mut missing = missing_libraries(
+        &[
+            "onnxruntime_providers_cuda.dll",
+            "onnxruntime_providers_shared.dll",
+        ],
+        std::slice::from_ref(&runtime_dir),
+    );
+    let mut directories = vec![
+        runtime_dir,
+        std::env::current_exe()?.parent().unwrap().to_path_buf(),
+    ];
+    if let Some(windows) = std::env::var_os("SystemRoot") {
+        directories.push(PathBuf::from(windows).join("System32"));
+    }
+    if let Some(path) = std::env::var_os("PATH") {
+        directories.extend(std::env::split_paths(&path).filter(|p| p.is_absolute()));
+    }
+    missing.extend(missing_libraries(CUDA_DEPENDENCIES, &directories));
+    ensure!(
+        missing.is_empty(),
+        "CUDA libraries missing: {}. See windows/README.md",
+        missing.join(", ")
+    );
+    Ok(())
+}
+
 impl Runtime {
     pub fn new(models: &Path, backend: Backend) -> Result<Self> {
+        if backend == Backend::Cuda {
+            cuda_libraries()?;
+        }
         ensure!(
             matches!(backend, Backend::Cuda | Backend::DirectMl | Backend::Cpu),
             "Invalid ONNX backend"
@@ -376,6 +425,9 @@ pub fn create(
     };
     let mut failures = Vec::new();
     for &backend in choices {
+        if requested == Backend::Auto && backend == Backend::Cuda && cuda_libraries().is_err() {
+            continue;
+        }
         let path = models.to_path_buf();
         let gpu = backend != Backend::Cpu;
         let pipeline = fah_rust::pipeline::Pipeline::new(
@@ -442,4 +494,45 @@ pub fn check(models: &Path, backend: Backend, runs: usize, fixture: &Path) -> Re
     );
     ensure!(passed, "Numerical validation failed");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn cuda_requires_every_dependency_across_search_directories() {
+        let root = std::env::temp_dir().join(format!(
+            "fah-cuda-probe-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let second = root.join("second");
+        std::fs::create_dir(&second).unwrap();
+        let dirs = [root.clone(), second.clone()];
+        for name in CUDA_DEPENDENCIES
+            .iter()
+            .filter(|name| **name != "cudnn64_9.dll")
+        {
+            std::fs::write(root.join(name), []).unwrap();
+        }
+        assert_eq!(
+            missing_libraries(CUDA_DEPENDENCIES, &dirs),
+            vec!["cudnn64_9.dll"]
+        );
+        std::fs::write(second.join("cudnn64_9.dll"), []).unwrap();
+        assert!(missing_libraries(CUDA_DEPENDENCIES, &dirs).is_empty());
+        for name in CUDA_DEPENDENCIES
+            .iter()
+            .filter(|name| **name != "cudnn64_9.dll")
+        {
+            std::fs::remove_file(root.join(name)).unwrap();
+        }
+        std::fs::remove_file(second.join("cudnn64_9.dll")).unwrap();
+        std::fs::remove_dir(second).unwrap();
+        std::fs::remove_dir(root).unwrap();
+    }
 }

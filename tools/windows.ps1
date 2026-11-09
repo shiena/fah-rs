@@ -40,7 +40,7 @@ try {
     Copy-Item windows/native/build/fah_backend.dll windows/target/release/fah_backend.dll -Force
     if ($Action -eq 'test') {
         $env:PATH = (Join-Path $root 'windows/native/build') + ';' + $env:PATH
-        cargo test --manifest-path app/src/main/rust/Cargo.toml
+        cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --locked
         if ($LASTEXITCODE) { throw 'Shared Rust tests failed.' }
         cargo test --manifest-path windows/Cargo.toml --release --locked -j $Jobs
         if ($LASTEXITCODE) { throw 'Windows tests failed.' }

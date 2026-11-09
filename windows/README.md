@@ -88,6 +88,8 @@ If CUDA reports cudnn64_9.dll missing, install cuDNN and add its DLL directory t
 
 ## Design and validation status
 
+Source layers and host ownership are described in the [architecture guide](../docs/architecture.md) (Japanese). `fah-application::Session` processes host-supplied frames synchronously. `Worker` adds desktop scheduling and capture. Build the Windows runtime library with `--no-default-features` to exclude GPUI. The [host-frame example](examples/host_frame.rs) demonstrates this path; it does not open a window or camera. Unity/Godot ABI bindings are not implemented yet.
+
 Rust loads the ONNX Runtime C API through ort-sys. Each runtime owns its API table and native handles; CUDA and DirectML do not share a global API pointer. The inference worker owns sessions exclusively. Switching backends drops sessions before creating replacements. Handles are released before library unload. DirectML uses sequential execution with memory patterns disabled.
 
 DirectML passed the pose reference check and four real-image fixtures on RTX 5070. Pose-only median latency was approximately 4.6 ms, versus approximately 29 ms in the earlier ncnn/Vulkan run. These are separate runs, not a controlled throughput benchmark. CPU checks, sample/video processing, and CUDA-to-DirectML recovery also passed.

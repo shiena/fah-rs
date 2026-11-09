@@ -72,6 +72,7 @@ pub struct Pipeline {
     factory: Factory,
     directory: String,
     gpu: bool,
+    gpu_backend: &'static str,
     fallback: bool,
     grid: Vec<f32>,
     previous: Vec<Box2>,
@@ -91,6 +92,7 @@ impl Pipeline {
             factory,
             directory: directory.into(),
             gpu,
+            gpu_backend: "gpu",
             fallback: false,
             grid,
             previous: vec![],
@@ -98,6 +100,10 @@ impl Pipeline {
             width: 0,
             height: 0,
         })
+    }
+    pub fn with_gpu_backend(mut self, backend: &'static str) -> Self {
+        self.gpu_backend = backend;
+        self
     }
     pub fn process(
         &mut self,
@@ -346,26 +352,9 @@ impl Pipeline {
             hands.push(json!({"right":b.right,"score":score,"presence":presence,"side":side,"joints2d":uv[..21],"joints3d":joints3d}));
         }
         Ok(
-            json!({"backend":if self.gpu {"vulkan"} else {"cpu"},"cpu_fallback":self.fallback,"width":width,"height":height,"frame":self.frame,"detected":detection,"detector_ms":det_ms,"pose_ms":pose_ms,"recovery_ms":recovery,"total_ms":elapsed(start)+recovery,"hands":hands}),
+            json!({"backend":if self.gpu {self.gpu_backend} else {"cpu"},"cpu_fallback":self.fallback,"width":width,"height":height,"frame":self.frame,"detected":detection,"detector_ms":det_ms,"pose_ms":pose_ms,"recovery_ms":recovery,"total_ms":elapsed(start)+recovery,"hands":hands}),
         )
     }
-}
-#[cfg(any(
-    target_os = "android",
-    all(target_os = "windows", feature = "native-runtime")
-))]
-pub fn create(directory: &str, gpu: bool, half: bool) -> Result<Pipeline> {
-    let path = directory.to_owned();
-    Pipeline::new(
-        directory,
-        gpu,
-        half,
-        Box::new(move |gpu, half| {
-            Ok(Box::new(crate::runtime::Runtime::new(
-                &path, gpu, half, true,
-            )?))
-        }),
-    )
 }
 #[cfg(test)]
 mod tests {
@@ -420,6 +409,7 @@ mod tests {
                 }),
                 directory: String::new(),
                 gpu,
+                gpu_backend: "gpu",
                 fallback: false,
                 grid: vec![160.; 800],
                 previous: vec![],

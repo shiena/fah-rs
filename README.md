@@ -1,5 +1,7 @@
 # fah-android
 
+The shared code is organized into GUI, API, application, tracking core, and platform layers, with separate frame-input adapters. See the [architecture and engine-integration boundaries](docs/architecture.md) (Japanese). The Windows runtime library can be built without GPUI using `--no-default-features`.
+
 A Windows app with a GPUI interface supports images, videos, and USB cameras. See the [Windows build and usage guide](windows/README.md).
 
 Windows 11 inference supports CUDA, DirectML (no CUDA required), and CPU. Follow the [runtime installation steps](windows/README.md#install-inference-runtimes), then export the ONNX models with `tools/export_onnx.py`. CUDA requires CUDA 13.x and the CUDA 13 build of cuDNN 9. The app does not install these dependencies automatically.
@@ -167,7 +169,7 @@ Results are saved to `artifacts/video-validation.json`. This is a smoke test, no
 ### Test the Rust code
 
 ```powershell
-cargo test --manifest-path app/src/main/rust/Cargo.toml
+cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --locked
 cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
 ```
 
@@ -183,13 +185,13 @@ For the Rust migration checks, including video and APK tests, see [the recorded 
 | `tools/export.py` | Load the required FAH modules and convert them to ncnn. |
 | `tools/make_fixtures.py` | Generate test inputs and PyTorch reference outputs. |
 | `app/src/main/rust/src/android.rs` | Implement JNI entry points and bitmap locking. |
-| `app/src/main/rust/src/runtime.rs` | Own native runtime handles and copy tensor outputs into Rust. |
-| `app/src/main/cpp/bridge.cpp` | Adapt the ncnn runtime to C ABI calls and contain C++ exceptions. |
-| `app/src/main/cpp/runtime.cpp` | Load ncnn models, run inference, and split GPU processing. |
-| `app/src/main/cpp/vulkan_ops.cpp` | Implement custom Vulkan matrix multiplication, reduction, GELU, and LayerNorm. |
-| `app/src/main/rust/src/pipeline.rs` | Detect hands, crop images, construct camera conditioning, restore coordinates, and track regions. |
+| `crates/fah-ncnn/src/runtime.rs` | Own native runtime handles and copy tensor outputs into Rust. |
+| `backends/ncnn/cpp/bridge.cpp` | Adapt the ncnn runtime to C ABI calls and contain C++ exceptions. |
+| `backends/ncnn/cpp/runtime.cpp` | Load ncnn models, run inference, and split GPU processing. |
+| `backends/ncnn/cpp/vulkan_ops.cpp` | Implement custom Vulkan matrix multiplication, reduction, GELU, and LayerNorm. |
+| `crates/fah-core/src/pipeline.rs` | Detect hands, crop images, construct camera conditioning, restore coordinates, and track regions. |
 | `app/src/main/java/dev/fah/android/MainActivity.java` | Display the camera preview and joints. |
-| `app/src/main/rust/src/check.rs` | Run numerical comparisons and benchmarks on the device. |
+| `crates/fah-ncnn/src/check.rs` | Run numerical comparisons and benchmarks on the device. |
 
 ## License
 

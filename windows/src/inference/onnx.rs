@@ -1,44 +1,14 @@
-//! Each runtime owns its API table, sessions, and dynamically loaded library.
+use crate::platform::ort::{cuda_libraries, load, runtime_path, wide};
 use anyhow::{Context, Result, bail, ensure};
-use fah_rust::runtime::{Inference, Tensor};
-use libloading::os::windows::{LOAD_WITH_ALTERED_SEARCH_PATH, Library};
+use fah_api::Backend;
+use fah_core::runtime::{Inference, Tensor};
+use libloading::Library;
 use ort_sys::*;
 use std::{
     ffi::{CStr, CString},
-    os::windows::ffi::OsStrExt,
-    path::{Path, PathBuf},
+    path::Path,
     ptr,
 };
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Backend {
-    Auto,
-    Cuda,
-    DirectMl,
-    Cpu,
-    Vulkan,
-}
-impl Backend {
-    pub fn name(self) -> &'static str {
-        match self {
-            Self::Auto => "auto",
-            Self::Cuda => "cuda",
-            Self::DirectMl => "directml",
-            Self::Cpu => "cpu",
-            Self::Vulkan => "vulkan",
-        }
-    }
-    pub fn parse(value: &str) -> Result<Self> {
-        match value {
-            "auto" => Ok(Self::Auto),
-            "cuda" => Ok(Self::Cuda),
-            "directml" => Ok(Self::DirectMl),
-            "cpu" => Ok(Self::Cpu),
-            "vulkan" => Ok(Self::Vulkan),
-            _ => bail!("Unknown backend: {value}"),
-        }
-    }
-}
 struct Handle<T> {
     ptr: *mut T,
     release: unsafe extern "system" fn(*mut T),
@@ -82,89 +52,6 @@ fn checked(api: &OrtApi, status: OrtStatusPtr) -> Result<()> {
     }
     Ok(())
 }
-pub fn runtime_path(backend: Backend) -> Result<PathBuf> {
-    let key = if backend == Backend::Cuda {
-        "FAH_ORT_CUDA"
-    } else {
-        "FAH_ORT_DML"
-    };
-    let adjacent = std::env::current_exe()?
-        .parent()
-        .unwrap()
-        .join("runtimes")
-        .join(if backend == Backend::Cuda {
-            "cuda"
-        } else {
-            "directml"
-        })
-        .join("onnxruntime.dll");
-    let development = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../third_party")
-        .join(if backend == Backend::Cuda {
-            "ort-cuda13-1.31.1/onnxruntime-win-x64-gpu_cuda13-1.31.1/lib/onnxruntime.dll"
-        } else {
-            "ort-directml-1.24.4/runtimes/win-x64/native/onnxruntime.dll"
-        });
-    let path = std::env::var_os(key).map(PathBuf::from).unwrap_or_else(|| {
-        if adjacent.is_file() || !development.is_file() {
-            adjacent
-        } else {
-            development
-        }
-    });
-    path.canonicalize().with_context(|| {
-        format!(
-            "{} is missing. Set {key} to onnxruntime.dll; see windows/README.md",
-            path.display()
-        )
-    })
-}
-const CUDA_DEPENDENCIES: &[&str] = &[
-    "cudart64_13.dll",
-    "cublas64_13.dll",
-    "cublasLt64_13.dll",
-    "cudnn64_9.dll",
-    "nvcuda.dll",
-];
-
-fn missing_libraries(names: &[&str], directories: &[PathBuf]) -> Vec<String> {
-    names
-        .iter()
-        .filter(|name| !directories.iter().any(|dir| dir.join(name).is_file()))
-        .map(|name| (*name).to_owned())
-        .collect()
-}
-
-/// Check files before loading CUDA or constructing either model.
-pub fn cuda_libraries() -> Result<()> {
-    let runtime = runtime_path(Backend::Cuda)?;
-    let runtime_dir = runtime.parent().unwrap().to_path_buf();
-    let mut missing = missing_libraries(
-        &[
-            "onnxruntime_providers_cuda.dll",
-            "onnxruntime_providers_shared.dll",
-        ],
-        std::slice::from_ref(&runtime_dir),
-    );
-    let mut directories = vec![
-        runtime_dir,
-        std::env::current_exe()?.parent().unwrap().to_path_buf(),
-    ];
-    if let Some(windows) = std::env::var_os("SystemRoot") {
-        directories.push(PathBuf::from(windows).join("System32"));
-    }
-    if let Some(path) = std::env::var_os("PATH") {
-        directories.extend(std::env::split_paths(&path).filter(|p| p.is_absolute()));
-    }
-    missing.extend(missing_libraries(CUDA_DEPENDENCIES, &directories));
-    ensure!(
-        missing.is_empty(),
-        "CUDA libraries missing: {}. See windows/README.md",
-        missing.join(", ")
-    );
-    Ok(())
-}
-
 impl Runtime {
     pub fn new(models: &Path, backend: Backend) -> Result<Self> {
         if backend == Backend::Cuda {
@@ -176,13 +63,12 @@ impl Runtime {
         );
         let path = runtime_path(backend)?;
         // Resolve dependencies beside the explicitly selected runtime first.
-        let library = unsafe { Library::load_with_flags(&path, LOAD_WITH_ALTERED_SEARCH_PATH) }
-            .with_context(|| {
-                format!(
-                    "Cannot load {} (check runtime dependencies)",
-                    path.display()
-                )
-            })?;
+        let library = load(&path).with_context(|| {
+            format!(
+                "Cannot load {} (check runtime dependencies)",
+                path.display()
+            )
+        })?;
         unsafe {
             let get = library
                 .get::<unsafe extern "system" fn() -> *const OrtApiBase>(b"OrtGetApiBase\0")?;
@@ -247,12 +133,12 @@ impl Runtime {
             let load = |name: &str| -> Result<Handle<OrtSession>> {
                 if let Some(mut prefix) = std::env::var_os("FAH_ORT_PROFILE") {
                     prefix.push(format!("-{name}"));
-                    let wide: Vec<u16> = prefix.encode_wide().chain(Some(0)).collect();
+                    let wide: Vec<u16> = wide(&prefix);
                     checked(api, (api.EnableProfiling)(options.ptr, wide.as_ptr()))?;
                 }
                 let mut session = Handle::new(api.ReleaseSession);
                 let path = models.join(name);
-                let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+                let wide: Vec<u16> = wide(path.as_os_str());
                 checked(
                     api,
                     (api.CreateSession)(env.ptr, wide.as_ptr(), options.ptr, &mut session.ptr),
@@ -387,7 +273,7 @@ impl Runtime {
     }
 }
 impl Inference for Runtime {
-    fn detect(&mut self, image: &Tensor) -> fah_rust::Result<Tensor> {
+    fn detect(&mut self, image: &Tensor) -> fah_core::Result<Tensor> {
         self.run(
             self.detector.ptr,
             &[("img", &[1, 3, 640, 640], &image.data)],
@@ -401,7 +287,7 @@ impl Inference for Runtime {
         image: &Tensor,
         rays: &Tensor,
         condition: &Tensor,
-    ) -> fah_rust::Result<Vec<Tensor>> {
+    ) -> fah_core::Result<Vec<Tensor>> {
         self.run(
             self.pose.ptr,
             &[
@@ -414,49 +300,10 @@ impl Inference for Runtime {
         .map_err(|e| format!("{e:#}"))
     }
 }
-pub fn create(
-    models: &Path,
-    requested: Backend,
-) -> Result<(fah_rust::pipeline::Pipeline, Backend, String)> {
-    let choices: &[Backend] = if requested == Backend::Auto {
-        &[Backend::Cuda, Backend::DirectMl, Backend::Cpu]
-    } else {
-        std::slice::from_ref(&requested)
-    };
-    let mut failures = Vec::new();
-    for &backend in choices {
-        if requested == Backend::Auto && backend == Backend::Cuda && cuda_libraries().is_err() {
-            continue;
-        }
-        let path = models.to_path_buf();
-        let gpu = backend != Backend::Cpu;
-        let pipeline = fah_rust::pipeline::Pipeline::new(
-            &models.to_string_lossy(),
-            gpu,
-            false,
-            Box::new(move |gpu, _| {
-                let selected = if gpu { backend } else { Backend::Cpu };
-                if backend == Backend::Vulkan {
-                    fah_rust::runtime::Runtime::new(&path.to_string_lossy(), gpu, false, true)
-                        .map(|r| Box::new(r) as Box<dyn Inference + Send>)
-                } else {
-                    Runtime::new(&path, selected)
-                        .map(|r| Box::new(r) as Box<dyn Inference + Send>)
-                        .map_err(|e| format!("{e:#}"))
-                }
-            }),
-        );
-        match pipeline {
-            Ok(pipeline) => return Ok((pipeline, backend, failures.join("\n"))),
-            Err(error) => failures.push(format!("{}: {error}", backend.name())),
-        }
-    }
-    bail!("{}", failures.join("\n"))
-}
 pub fn check(models: &Path, backend: Backend, runs: usize, fixture: &Path) -> Result<()> {
     ensure!((1..=1000).contains(&runs), "runs must be 1..1000");
     let mut net = Runtime::new(models, backend)?;
-    let read = |name: &str| fah_rust::read_floats(fixture.join(name)).map_err(anyhow::Error::msg);
+    let read = |name: &str| fah_core::read_floats(fixture.join(name)).map_err(anyhow::Error::msg);
     let img = Tensor::new(320, 320, 3, read("img.f32")?);
     let rays = Tensor::new(99, 400, 1, read("rays.f32")?);
     let cond = Tensor::new(3, 1, 1, read("cond.f32")?);
@@ -494,45 +341,4 @@ pub fn check(models: &Path, backend: Backend, runs: usize, fixture: &Path) -> Re
     );
     ensure!(passed, "Numerical validation failed");
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn cuda_requires_every_dependency_across_search_directories() {
-        let root = std::env::temp_dir().join(format!(
-            "fah-cuda-probe-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir(&root).unwrap();
-        let second = root.join("second");
-        std::fs::create_dir(&second).unwrap();
-        let dirs = [root.clone(), second.clone()];
-        for name in CUDA_DEPENDENCIES
-            .iter()
-            .filter(|name| **name != "cudnn64_9.dll")
-        {
-            std::fs::write(root.join(name), []).unwrap();
-        }
-        assert_eq!(
-            missing_libraries(CUDA_DEPENDENCIES, &dirs),
-            vec!["cudnn64_9.dll"]
-        );
-        std::fs::write(second.join("cudnn64_9.dll"), []).unwrap();
-        assert!(missing_libraries(CUDA_DEPENDENCIES, &dirs).is_empty());
-        for name in CUDA_DEPENDENCIES
-            .iter()
-            .filter(|name| **name != "cudnn64_9.dll")
-        {
-            std::fs::remove_file(root.join(name)).unwrap();
-        }
-        std::fs::remove_file(second.join("cudnn64_9.dll")).unwrap();
-        std::fs::remove_dir(second).unwrap();
-        std::fs::remove_dir(root).unwrap();
-    }
 }

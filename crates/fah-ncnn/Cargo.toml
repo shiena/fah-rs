@@ -1,0 +1,13 @@
+[package]
+name = "fah-ncnn"
+version = "0.1.0"
+edition = "2021"
+
+# Native symbols are linked by the platform host; validate through that host.
+[lib]
+test = false
+doctest = false
+
+[dependencies]
+fah-core = { path = "../fah-core" }
+serde_json = "1"

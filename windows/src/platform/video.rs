@@ -1,9 +1,10 @@
 use anyhow::{Context, Result, bail};
+use fah_api::{Frame, FrameSource, Source};
 use image::RgbaImage;
 use std::{
     io::{BufRead, BufReader, Read},
     os::windows::process::CommandExt,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::{Child, Command, Stdio},
     sync::{Arc, Mutex},
     thread::{self, JoinHandle},
@@ -13,41 +14,6 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 pub const VIDEO_WIDTH: u32 = 640;
 pub const VIDEO_HEIGHT: u32 = 480;
 
-#[derive(Clone, Debug)]
-pub enum Source {
-    Image(PathBuf),
-    Video(PathBuf),
-    SampleVideo(PathBuf),
-    Camera(String),
-}
-impl Source {
-    pub fn label(&self) -> String {
-        match self {
-            Self::Camera(name) => name.clone(),
-            Self::Image(path) | Self::Video(path) | Self::SampleVideo(path) => path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned(),
-        }
-    }
-    pub fn file(path: PathBuf) -> Self {
-        match path
-            .extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "png" | "jpg" | "jpeg" | "webp" | "bmp" => Self::Image(path),
-            _ => Self::Video(path),
-        }
-    }
-}
-pub struct Frame {
-    pub image: RgbaImage,
-    pub captured: Instant,
-}
 fn ffmpeg() -> Command {
     let path = std::env::var_os("FAH_FFMPEG")
         .map(PathBuf::from)
@@ -98,59 +64,6 @@ struct StreamState {
     ended: bool,
     error: Option<String>,
 }
-pub enum Input {
-    Still(Option<Frame>),
-    Stream(Stream),
-}
-impl Input {
-    pub fn open(source: &Source) -> Result<Self> {
-        if let Source::Image(path) = source {
-            let image = image::open(path)
-                .with_context(|| format!("画像を開けません: {}", path.display()))?
-                .thumbnail(1280, 1280)
-                .to_rgba8();
-            return Ok(Self::Still(Some(Frame {
-                image,
-                captured: Instant::now(),
-            })));
-        }
-        Ok(Self::Stream(Stream::open(source)?))
-    }
-    pub fn next(&mut self) -> Result<Option<Frame>> {
-        match self {
-            Self::Still(frame) => Ok(frame.take()),
-            Self::Stream(stream) => {
-                let mut state = stream.state.lock().unwrap();
-                if let Some(error) = state.error.take() {
-                    bail!(error);
-                }
-                Ok(state.latest.take())
-            }
-        }
-    }
-    pub fn finished(&mut self) -> Result<bool> {
-        match self {
-            Self::Still(frame) => Ok(frame.is_none()),
-            Self::Stream(stream) => {
-                if !stream.state.lock().unwrap().ended {
-                    return Ok(false);
-                }
-                if stream.state.lock().unwrap().latest.is_some() {
-                    return Ok(false);
-                }
-                if let Some(status) = stream.child.try_wait()? {
-                    if !status.success() {
-                        let message = stream.stderr.lock().unwrap().clone();
-                        bail!("入力を終了しました: {message}");
-                    }
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
-            }
-        }
-    }
-}
 pub struct Stream {
     child: Child,
     state: Arc<Mutex<StreamState>>,
@@ -159,7 +72,7 @@ pub struct Stream {
     error_reader: Option<JoinHandle<()>>,
 }
 impl Stream {
-    fn open(source: &Source) -> Result<Self> {
+    pub fn open(source: &Source) -> Result<Self> {
         let mut cmd = ffmpeg();
         cmd.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
         match source {
@@ -251,24 +164,30 @@ impl Drop for Stream {
         }
     }
 }
-pub fn validate_models(directory: &Path, backend: crate::onnx::Backend) -> Result<()> {
-    let files: &[&str] = if backend == crate::onnx::Backend::Vulkan {
-        &[
-            "pose.ncnn.param",
-            "pose.ncnn.bin",
-            "detector.ncnn.param",
-            "detector.ncnn.bin",
-            "uv_grid.f32",
-        ]
-    } else {
-        &["pose.onnx", "detector.onnx", "uv_grid.f32"]
-    };
-    for name in files {
-        if !directory.join(name).is_file() {
-            bail!("モデルがありません: {}", directory.join(name).display());
+
+impl FrameSource for Stream {
+    fn next_frame(&mut self) -> Result<Option<Frame>> {
+        let mut state = self.state.lock().unwrap();
+        if let Some(error) = state.error.take() {
+            bail!(error);
+        }
+        Ok(state.latest.take())
+    }
+    fn finished(&mut self) -> Result<bool> {
+        let state = self.state.lock().unwrap();
+        if !state.ended || state.latest.is_some() {
+            return Ok(false);
+        }
+        drop(state);
+        if let Some(status) = self.child.try_wait()? {
+            if !status.success() {
+                bail!("入力を終了しました: {}", self.stderr.lock().unwrap());
+            }
+            Ok(true)
+        } else {
+            Ok(false)
         }
     }
-    Ok(())
 }
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,7 @@
 # fah-android
 
+GUI・共通API・アプリケーション・追跡コア・プラットフォームの5層と映像入力アダプターを分離しています。[構成とUnity・Godot向けの接続境界](docs/architecture.md)を参照してください。
+
 Windows版も利用できます。GPUIのGUIで画像・動画・USBカメラを処理します。[ビルドと使い方](windows/README_ja.md)を参照してください。
 
 Windows 11版はCUDA・DirectML・CPUに対応します。[ランタイムの導入手順](windows/README_ja.md#ランタイムを導入する)に従い、`tools/export_onnx.py`でモデルを変換します。CUDAを使う場合はCUDA 13.xとCUDA 13用cuDNN 9が必要です。アプリによる自動導入は行いません。
@@ -161,7 +163,7 @@ FFmpegをインストールして`PATH`に登録し、次のコマンドを実�
 ### Rustのコードを検証する
 
 ```powershell
-cargo test --manifest-path app/src/main/rust/Cargo.toml
+cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --locked
 cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
 ```
 
@@ -177,13 +179,13 @@ Rust移植後の動画・APK検証結果は[検証データ](docs/rust-validatio
 | `tools/export.py` | FAHの必要なモジュールだけを読み込み、ncnnへ変換 |
 | `tools/make_fixtures.py` | 比較用の入力とPyTorchの基準値を生成 |
 | `app/src/main/rust/src/android.rs` | JNI入口とビットマップのロック管理 |
-| `app/src/main/rust/src/runtime.rs` | ネイティブハンドルの所有とテンソルのコピー |
-| `app/src/main/cpp/bridge.cpp` | ncnnのC ABIアダプターとC++例外の処理 |
-| `app/src/main/cpp/runtime.cpp` | ncnnの読み込み、推論、GPU処理の分割 |
-| `app/src/main/cpp/vulkan_ops.cpp` | 独自のVulkan行列積・集約・GELU・LayerNorm |
-| `app/src/main/rust/src/pipeline.rs` | 検出、切り出し、カメラ条件、座標復元、追跡 |
+| `crates/fah-ncnn/src/runtime.rs` | ネイティブハンドルの所有とテンソルのコピー |
+| `backends/ncnn/cpp/bridge.cpp` | ncnnのC ABIアダプターとC++例外の処理 |
+| `backends/ncnn/cpp/runtime.cpp` | ncnnの読み込み、推論、GPU処理の分割 |
+| `backends/ncnn/cpp/vulkan_ops.cpp` | 独自のVulkan行列積・集約・GELU・LayerNorm |
+| `crates/fah-core/src/pipeline.rs` | 検出、切り出し、カメラ条件、座標復元、追跡 |
 | `app/src/main/java/dev/fah/android/MainActivity.java` | カメラと関節表示 |
-| `app/src/main/rust/src/check.rs` | 実機の比較・計測用コマンド |
+| `crates/fah-ncnn/src/check.rs` | 実機の比較・計測用コマンド |
 
 ## ライセンス
 

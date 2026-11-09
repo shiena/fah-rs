@@ -60,7 +60,7 @@ typedef struct FahResult {
    All non-NULL pointers must be aligned, valid, and accessible for the stated size.
    Input/output buffers must not overlap. Strings are NUL-terminated UTF-8. */
 /* After all tasks/handles are released, call shutdown before process exit or
-   unloading the plugin. This releases process-wide Vulkan state on Windows.
+   unloading the plugin. This releases process-wide Vulkan state on Windows and Linux.
    No other users of the shared fah_backend library may still be active. */
 FAH_API int32_t FAH_CALL fah_engine_shutdown(void);
 FAH_API uint32_t FAH_CALL fah_engine_abi_version(void);

@@ -136,7 +136,7 @@ fn open(config: &Config) -> Result<Box<dyn TrackingSession>> {
         let library = Path::new(unsafe { string(config.native_library_utf8)? });
         fah_apple_platform::session(fah_apple_platform::Native::load(library)?, models, selected)
     }
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     {
         Ok(Box::new(fah_application::Session::open(
             models,
@@ -152,7 +152,8 @@ fn open(config: &Config) -> Result<Box<dyn TrackingSession>> {
         target_os = "windows",
         target_os = "macos",
         target_os = "android",
-        target_os = "ios"
+        target_os = "ios",
+        target_os = "linux"
     )))]
     {
         let _ = (models, selected);
@@ -439,6 +440,10 @@ pub extern "C" fn fah_engine_shutdown() -> i32 {
         #[cfg(target_os = "windows")]
         unsafe {
             fah_windows::platform::shutdown();
+        }
+        #[cfg(target_os = "linux")]
+        unsafe {
+            fah_ncnn::runtime::shutdown();
         }
         Ok(())
     })

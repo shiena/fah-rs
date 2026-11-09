@@ -1,7 +1,7 @@
 # Unity・Godot向けの共通コア
 
 `fah-ffi`は、GUIなしで手の追跡処理を呼び出すC ABIです。
-Windows、Android、macOS、iOSで[同じヘッダー](include/fah_engine.h)を使用します。
+Windows、Android、macOS、iOS、Linuxで[同じヘッダー](include/fah_engine.h)を使用します。
 エンジン本体のプラグイン登録やカメラ制御は、ホスト側で実装します。
 
 ## APIを呼び出す
@@ -15,7 +15,7 @@ Windows、Android、macOS、iOSで[同じヘッダー](include/fah_engine.h)を�
 7. ホストの推論タスクを終了し、`fah_engine_destroy`でセッションを破棄します。
 8. 全セッションと結果の解放後、`fah_engine_shutdown`を呼びます。
 
-最後の終了処理はWindowsのVulkan状態を解放します。ライブラリのアンロード前とアプリ終了前に実行します。
+最後の終了処理はWindowsとLinuxのVulkan状態を解放します。ライブラリのアンロード前とアプリ終了前に実行します。
 同じ`fah_backend`を使う別のホストも、この時点で処理を終了している必要があります。
 
 セッションと結果は64ビットの整数ハンドルです。解放済みのハンドルはエラーになります。
@@ -47,12 +47,13 @@ NULLやサイズ、バージョンは検証しますが、不正なメモリー�
 | OS | 対象 | 推論バックエンド | 成果物 |
 |---|---|---|---|
 | Windows | x64 | CUDA／DirectML／CPU／Vulkan | `windows/fah_engine.dll`、`fah_backend.dll` |
+| Linux | x86_64 | Vulkan／CPU | `linux/libfah_engine.so`、`libfah_backend.so` |
 | Android | arm64-v8a、API 26以降 | Vulkan／CPU | `android/libfah_engine.so`、`libfah_backend.so`、`libc++_shared.so` |
 | macOS | Apple silicon、macOS 15以降 | Metal／Core ML | `macos/libfah_engine.dylib`、`libFAHAppleNative.dylib`、リソースバンドル |
 | iOS | arm64、iOS 18以降 | Metal／Core ML | `ios/libfah_engine.a`とSwiftパッケージの`FAHAppleNative` |
 
 バックエンドの値は、Auto=0、CPU=1、Vulkan=2、CUDA=3、DirectML=4、Metal=5です。
-Autoの候補はWindowsがCUDA→DirectML→CPU、AndroidがVulkan→CPU、AppleがMetalです。
+Autoの候補はWindowsがCUDA→DirectML→CPU、AndroidとLinuxがVulkan→CPU、AppleがMetalです。
 AppleのCPUフォールバックはありません。
 
 ### Windowsでビルドする
@@ -81,6 +82,45 @@ python engines/build.py --platform android --ndk /absolute/path/to/ndk/30.0.1624
 
 生成した3つの`.so`を同じABI向けに組み込みます。既存の`libc++_shared.so`との版の競合を確認します。
 モデルはAPK内の圧縮アセットのまま渡さず、アプリから読み出せる実ファイルへ展開します。
+
+### Linuxでビルドする
+
+GCCまたはClang、CMake 3.22以降、Ninja、Rust、Vulkan開発ヘッダーが必要です。
+ncnnはWindowsと同じリビジョンを使用します。
+
+```sh
+git clone --branch 20261020 --depth 1 --recurse-submodules --shallow-submodules https://github.com/Tencent/ncnn.git third_party/ncnn-src
+python3 engines/build.py --platform linux
+```
+
+既存の`third_party/ncnn-src`がある場合はcloneを省略します。
+使用するリビジョンは`7e36d25cb153092ba87a60530455c7376fedf452`です。
+生成した2つの`.so`は同じディレクトリへ置きます。`libfah_engine.so`は自身の配置先からバックエンドを読み込みます。
+実行先には互換性のあるglibc、libstdc++、libgompが必要です。Vulkanを使う場合はVulkanローダーとGPUドライバーも必要です。
+配布先より新しいglibcを要求しない環境でビルドします。別アーキテクチャ向けにビルドした成果物は使用できません。
+
+Cホストの確認例です。最後の値はCPU=1、Vulkan=2、Auto=0です。
+
+```sh
+cc engines/examples/check.c -Iengines/include -Lengines/build/linux -lfah_engine -Wl,-rpath,'$ORIGIN' -o engines/build/linux/engine-check
+engines/build/linux/engine-check models models/sample.rgba 640 426 2
+```
+
+Steam Deck向けの検証では、WSLのUbuntu 24.04でビルドした成果物をSteamOSへ転送します。
+WSLには`build-essential`、`cmake`、`ninja-build`、`pkg-config`、`libvulkan-dev`、`python3`、Rustを導入します。
+ビルド速度のため、ソースは`/mnt/c`ではなくWSLのホームディレクトリ配下に置きます。
+`python3 engines/build.py --platform linux --jobs 12`のように並列数を指定できます（既定は4）。
+GPU推論の検証は、SteamOSのGPUドライバーを使って実機上で実施します。
+
+カメラがない端末では、FFmpegで動画を連続RGBAフレームに変換します。
+Cホストはファイルの終端まで同じセッションで追跡し、フレームごとにJSONを出力します。
+
+```sh
+ffmpeg -i sample.mp4 -vf 'fps=10,scale=640:384' -frames:v 60 -pix_fmt rgba -f rawvideo sample-video.rgba
+./engine-check models sample-video.rgba 640 384 2 > video-results.jsonl
+```
+
+Linux向けのGPUI画面やカメラ入力は、このコア用ビルドには含みません。
 
 ### Macでビルドする
 

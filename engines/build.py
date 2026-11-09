@@ -20,12 +20,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--platform",
-        choices=["windows", "macos", "android"],
-        default={"Windows": "windows", "Darwin": "macos"}.get(platform.system()),
+        choices=["windows", "macos", "android", "linux"],
+        default={"Windows": "windows", "Darwin": "macos", "Linux": "linux"}.get(
+            platform.system()
+        ),
     )
     parser.add_argument("--ndk", type=Path)
     parser.add_argument("--cmake", default="cmake")
+    parser.add_argument("--jobs", type=int, default=4)
     args = parser.parse_args()
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
     if not args.platform:
         parser.error("Select a target platform")
     out = BUILD / args.platform
@@ -54,7 +59,7 @@ def main():
                 "-DCMAKE_BUILD_TYPE=Release",
             ]
         )
-        run([args.cmake, "--build", native, "--parallel", "4"])
+        run([args.cmake, "--build", native, "--parallel", args.jobs])
         host = {
             "Windows": "windows-x86_64",
             "Darwin": "darwin-x86_64",
@@ -77,6 +82,25 @@ def main():
         shutil.copy2(
             toolchain / "sysroot/usr/lib/aarch64-linux-android/libc++_shared.so", out
         )
+    elif args.platform == "linux":
+        if platform.system() != "Linux":
+            parser.error("Build Linux on a Linux host or container")
+        native = BUILD / "linux-native"
+        run(
+            [
+                args.cmake,
+                "-S",
+                ROOT / "engines/linux",
+                "-B",
+                native,
+                "-G",
+                "Ninja",
+                "-DCMAKE_BUILD_TYPE=Release",
+            ]
+        )
+        run([args.cmake, "--build", native, "--parallel", args.jobs])
+        env["FAH_NATIVE_DIR"] = str(native)
+        shutil.copy2(native / "libfah_backend.so", out)
     elif args.platform == "windows":
         native = ROOT / "windows/native/build"
         if not (native / "fah_backend.lib").is_file():
@@ -138,6 +162,7 @@ def main():
         "windows": "fah_engine.dll",
         "macos": "libfah_engine.dylib",
         "android": "libfah_engine.so",
+        "linux": "libfah_engine.so",
     }[args.platform]
     release = cargo_dir / ("aarch64-linux-android/release" if target else "release")
     shutil.copy2(release / binary, out)

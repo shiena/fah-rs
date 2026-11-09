@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use fah_api::{Backend, Capabilities, Inference, InferenceFactory};
 use std::path::Path;
-/// Android inference adapter; frames and scheduling belong to the host.
+/// ncnn platform adapter; frames and scheduling belong to the host.
 pub struct Backends;
 impl InferenceFactory for Backends {
     fn capabilities(&self) -> Capabilities {
@@ -12,7 +12,7 @@ impl InferenceFactory for Backends {
     }
     fn create(&self, models: &Path, backend: Backend) -> Result<Box<dyn Inference + Send>> {
         if !matches!(backend, Backend::Vulkan | Backend::Cpu) {
-            bail!("Unsupported Android backend: {}", backend.name());
+            bail!("Unsupported ncnn backend: {}", backend.name());
         }
         let runtime = crate::runtime::Runtime::new(
             &models.to_string_lossy(),

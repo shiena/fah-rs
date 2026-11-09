@@ -17,7 +17,7 @@ extern "C" {
     ) -> *mut c_void;
     fn fah_runtime_destroy(runtime: *mut c_void);
     fn fah_error() -> *const c_char;
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     fn fah_shutdown();
     fn fah_gpu_info() -> *const c_char;
     fn fah_coverage(runtime: *mut c_void) -> *const c_char;
@@ -34,7 +34,7 @@ extern "C" {
 ///
 /// # Safety
 /// All runtimes and inference threads must have been dropped or joined.
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 pub unsafe fn shutdown() {
     fah_shutdown();
 }

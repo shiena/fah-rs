@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-10",
+  "build_host": "WSL Ubuntu 24.04 x86_64, Rust 1.99.1",
+  "runtime_host": "Steam Deck, SteamOS 3.8.28, AMD Custom GPU 0405 (RADV VANGOGH)",
+  "input": {
+    "source": "third_party/FAH/docs/assets/videos/test_video_selfie.mp4",
+    "width": 640,
+    "height": 384,
+    "sample_fps": 10,
+    "frames": 60
+  },
+  "c_abi_tests": 5,
+  "video": {
+    "cpu": {
+      "frames": 60,
+      "frames_with_hands": 57,
+      "max_hands": 2,
+      "finite_21_joints": true,
+      "actual_backend": "cpu",
+      "cpu_fallback": false,
+      "mean_total_ms": 405.08
+    },
+    "vulkan": {
+      "frames": 60,
+      "frames_with_hands": 57,
+      "max_hands": 2,
+      "finite_21_joints": true,
+      "actual_backend": "vulkan",
+      "cpu_fallback": false,
+      "mean_total_ms": 342.07
+    },
+    "auto": {
+      "frames": 60,
+      "frames_with_hands": 57,
+      "max_hands": 2,
+      "finite_21_joints": true,
+      "actual_backend": "vulkan",
+      "cpu_fallback": false,
+      "mean_total_ms": 338.78
+    }
+  },
+  "vulkan_shutdown_and_recreate": true,
+  "relocated_libraries_without_ld_library_path": true,
+  "scope": "C ABI core; no Linux GUI or camera validation"
+}

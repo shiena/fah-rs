@@ -219,6 +219,7 @@ struct Viewer {
     last: Option<Output>,
     image: Option<Arc<RenderImage>>,
     show_joints: bool,
+    mirror_camera: bool,
 }
 impl Viewer {
     fn new(options: Options, cx: &mut Context<Self>) -> Self {
@@ -239,6 +240,7 @@ impl Viewer {
             last: None,
             image: None,
             show_joints: true,
+            mirror_camera: false,
         };
         cx.spawn(async move |view, cx| {
             loop {
@@ -294,6 +296,9 @@ impl Viewer {
             } else {
                 output.image.clone()
             };
+            if self.mirror_camera && matches!(self.source, Some(Source::Camera(_))) {
+                image::imageops::flip_horizontal_in_place(&mut rgba);
+            }
             for pixel in rgba.pixels_mut() {
                 pixel.0.swap(0, 2);
             }
@@ -529,6 +534,12 @@ impl Render for Viewer {
                             else {view.error=Some("使用できるカメラを選択してください".into());cx.notify();}
                         })))
                         .child(button("refresh","再検索",false).on_click(cx.listener(|view,_,_,_|{let _=view.worker.commands.send(Command::RefreshCameras);}))))
+                    .child(button("mirror-camera",if self.mirror_camera {"左右反転：ON"} else {"左右反転：OFF"},self.mirror_camera)
+                        .on_click(cx.listener(|view,_,_,cx|{
+                            view.mirror_camera = !view.mirror_camera;
+                            view.rebuild_image();
+                            cx.notify();
+                        })))
                     .child(div().mt_3().text_xs().text_color(rgb(0x8d9fb5)).child("推論"))
                     .child(div().flex().gap_2().children([(true,"GPU / Vulkan"),(false,"CPU")].into_iter().map(|(gpu,label)| {
                         button(label,label,self.gpu==gpu).on_click(cx.listener(move |view,_,_,cx|{

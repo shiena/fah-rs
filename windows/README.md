@@ -23,6 +23,8 @@ After building, run `windows/target/release/fah-windows.exe` directly. Keep `fah
 
 Select a device from the left panel, then click **カメラ開始** (Start camera). Click **再検索** (Refresh) if you connected the camera after launch. **停止** (Stop) releases the camera. Capture and hand overlays were tested with an HD Pro Webcam C920.
 
+Use **左右反転** to mirror the camera preview, including its joint overlays. The toggle also works while paused and defaults to OFF. Image/video inputs and saved PNG/JSON results remain unmirrored.
+
 Use **画像・動画を開く** to open a file, or **サンプル画像** for the bundled sample image. The adjacent video button requires the source checkout's `third_party/FAH/docs/assets/videos/test_video_selfie.mp4`. **結果を保存** saves the displayed image and a JSON file with the same stem.
 
 ```powershell

@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod media;
 mod worker;
 use gpui::{

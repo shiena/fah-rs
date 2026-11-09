@@ -1,11 +1,12 @@
-use crate::{pipeline, Result};
+use crate::Result;
+use fah_api::{Backend, Frame, TrackingSession};
 use jni::{
     objects::{JObject, JString},
     sys::{jboolean, jobject, jstring, JNIEnv as RawEnv},
     JNIEnv,
 };
-use std::{ffi::c_void, ptr, sync::Mutex};
-static PIPELINE: Mutex<Option<pipeline::Pipeline>> = Mutex::new(None);
+use std::{ffi::c_void, ptr, sync::Mutex, time::Instant};
+static PIPELINE: Mutex<Option<Box<dyn TrackingSession>>> = Mutex::new(None);
 #[repr(C)]
 #[derive(Default)]
 struct BitmapInfo {
@@ -60,7 +61,15 @@ pub extern "system" fn Java_dev_fah_android_MainActivity_nativeInit(
     invoke(env, |env| {
         let directory: String = env.get_string(&path).map_err(|e| e.to_string())?.into();
         let mut state = PIPELINE.lock().map_err(|e| e.to_string())?;
-        *state = Some(pipeline::create(&directory, gpu != 0, false)?);
+        let backend = if gpu != 0 {
+            Backend::Vulkan
+        } else {
+            Backend::Cpu
+        };
+        *state = Some(
+            crate::platform::session(std::path::Path::new(&directory), backend)
+                .map_err(|e| format!("{e:#}"))?,
+        );
         Ok(crate::runtime::gpu_info())
     })
 }
@@ -72,6 +81,7 @@ pub extern "system" fn Java_dev_fah_android_MainActivity_nativeProcess(
     reset: jboolean,
 ) -> jstring {
     invoke(env, |env| {
+        let captured = Instant::now();
         let mut state = PIPELINE.lock().map_err(|e| e.to_string())?;
         let pipeline = state.as_mut().ok_or("Models are not loaded")?;
         let raw = env.get_raw();
@@ -104,13 +114,20 @@ pub extern "system" fn Java_dev_fah_android_MainActivity_nativeProcess(
             return Err("Null bitmap pixels".into());
         }
         let rgba = unsafe { std::slice::from_raw_parts(pixels.data.cast::<u8>(), len) };
-        pipeline.process(
+        let frame = Frame::from_rgba(
             rgba,
-            info.width as usize,
-            info.height as usize,
+            info.width,
+            info.height,
             info.stride as usize,
-            reset != 0,
+            captured,
         )
+        .map_err(|e| format!("{e:#}"))?;
+        // Release the Android bitmap before running inference on the owned frame.
+        drop(pixels);
+        let output = pipeline
+            .process(frame, reset != 0)
+            .map_err(|e| format!("{e:#}"))?;
+        serde_json::to_string(&output.result).map_err(|e| e.to_string())
     })
 }
 #[no_mangle]

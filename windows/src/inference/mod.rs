@@ -4,6 +4,9 @@ use fah_api::{Backend, Capabilities, Inference, InferenceFactory};
 use std::path::Path;
 pub struct Backends;
 impl InferenceFactory for Backends {
+    fn automatic_backends(&self) -> &[Backend] {
+        &[Backend::Cuda, Backend::DirectMl, Backend::Cpu]
+    }
     fn cpu_fallback(&self, models: &Path, requested: Backend) -> Result<Box<dyn Inference + Send>> {
         if requested == Backend::Vulkan {
             return fah_ncnn::runtime::Runtime::new(&models.to_string_lossy(), false, false, true)

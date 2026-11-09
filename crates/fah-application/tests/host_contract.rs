@@ -26,11 +26,15 @@ impl Inference for Detector {
     }
 }
 struct Backends {
+    order: &'static [Backend],
     cuda: bool,
     fail_gpu: bool,
     calls: Mutex<Vec<Backend>>,
 }
 impl InferenceFactory for Backends {
+    fn automatic_backends(&self) -> &[Backend] {
+        self.order
+    }
     fn capabilities(&self) -> Capabilities {
         Capabilities { cuda: self.cuda }
     }
@@ -60,6 +64,7 @@ fn frame() -> Frame {
 fn host_can_process_without_a_capture_service_or_worker() {
     let directory = models();
     let factory = Arc::new(Backends {
+        order: &[Backend::Cuda, Backend::DirectMl, Backend::Cpu],
         cuda: true,
         fail_gpu: false,
         calls: Mutex::new(vec![]),
@@ -84,6 +89,7 @@ fn host_can_process_without_a_capture_service_or_worker() {
 fn unavailable_cuda_is_skipped_and_runtime_failure_reports_cpu() {
     let directory = models();
     let factory = Arc::new(Backends {
+        order: &[Backend::Cuda, Backend::DirectMl, Backend::Cpu],
         cuda: false,
         fail_gpu: true,
         calls: Mutex::new(vec![]),
@@ -149,6 +155,7 @@ fn desktop_stop_and_shutdown_release_injected_input() {
     let dropped = Arc::new(AtomicUsize::new(0));
     let worker = Worker::new(
         Arc::new(Backends {
+            order: &[Backend::Cuda, Backend::DirectMl, Backend::Cpu],
             cuda: false,
             fail_gpu: false,
             calls: Mutex::new(vec![]),
@@ -173,4 +180,25 @@ fn desktop_stop_and_shutdown_release_injected_input() {
     }
     drop(worker);
     assert_eq!(dropped.load(Ordering::SeqCst), 2);
+}
+
+#[test]
+fn android_order_uses_vulkan_and_recovers_with_cpu() {
+    let directory = models();
+    let factory = Arc::new(Backends {
+        order: &[Backend::Vulkan, Backend::Cpu],
+        cuda: false,
+        fail_gpu: true,
+        calls: Mutex::new(vec![]),
+    });
+    let mut session = Session::open(directory.path(), Backend::Auto, factory.clone()).unwrap();
+    assert_eq!(session.backend(), Backend::Vulkan);
+    let output = session.process(frame(), true).unwrap();
+    assert_eq!(session.backend(), Backend::Cpu);
+    assert_eq!(output.result["backend"], "cpu");
+    assert_eq!(output.result["cpu_fallback"], true);
+    assert_eq!(
+        *factory.calls.lock().unwrap(),
+        vec![Backend::Vulkan, Backend::Cpu]
+    );
 }

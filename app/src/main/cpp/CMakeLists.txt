@@ -18,14 +18,14 @@ set(FAH_CPP "${REPOSITORY_ROOT}/backends/ncnn/cpp")
 set(RUST_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo")
 set(RUST_LIBRARY "${RUST_TARGET_DIR}/aarch64-linux-android/release/libfah_rust.a")
 file(GLOB_RECURSE RUST_SOURCES CONFIGURE_DEPENDS "${RUST_DIR}/src/*.rs"
-    "${REPOSITORY_ROOT}/crates/fah-core/src/*.rs" "${REPOSITORY_ROOT}/crates/fah-ncnn/src/*.rs")
+    "${REPOSITORY_ROOT}/crates/*/src/*.rs")
+file(GLOB RUST_MANIFESTS CONFIGURE_DEPENDS "${REPOSITORY_ROOT}/crates/*/Cargo.toml")
 add_custom_command(OUTPUT "${RUST_LIBRARY}"
     COMMAND "${CMAKE_COMMAND}" -E env "CARGO_TARGET_DIR=${RUST_TARGET_DIR}"
         "${CARGO_EXECUTABLE}" build --manifest-path "${RUST_DIR}/Cargo.toml"
         --target aarch64-linux-android --release --locked
     DEPENDS ${RUST_SOURCES} "${RUST_DIR}/Cargo.toml" "${REPOSITORY_ROOT}/Cargo.lock"
-        "${REPOSITORY_ROOT}/Cargo.toml" "${REPOSITORY_ROOT}/crates/fah-core/Cargo.toml"
-        "${REPOSITORY_ROOT}/crates/fah-ncnn/Cargo.toml"
+        "${REPOSITORY_ROOT}/Cargo.toml" ${RUST_MANIFESTS}
     VERBATIM)
 add_custom_target(fah-rust-build DEPENDS "${RUST_LIBRARY}")
 add_library(fah-rust STATIC IMPORTED)

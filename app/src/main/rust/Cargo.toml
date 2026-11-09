@@ -13,6 +13,10 @@ native-runtime = []
 
 [dependencies]
 serde_json = "1"
+anyhow = "1"
+fah-api = { path = "../../../../crates/fah-api" }
+fah-application = { path = "../../../../crates/fah-application" }
+fah-input = { path = "../../../../crates/fah-input" }
 fah-core = { path = "../../../../crates/fah-core" }
 fah-ncnn = { path = "../../../../crates/fah-ncnn" }
 

@@ -1326,7 +1326,11 @@ dependencies = [
 name = "fah-native"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-application",
  "fah-core",
+ "fah-input",
  "fah-ncnn",
  "jni",
  "serde_json",

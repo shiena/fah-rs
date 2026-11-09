@@ -17,7 +17,7 @@ impl Session {
         factory: Arc<dyn InferenceFactory>,
     ) -> Result<Self> {
         let choices: &[Backend] = if requested == Backend::Auto {
-            &[Backend::Cuda, Backend::DirectMl, Backend::Cpu]
+            factory.automatic_backends()
         } else {
             std::slice::from_ref(&requested)
         };

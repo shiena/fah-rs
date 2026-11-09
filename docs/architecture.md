@@ -33,7 +33,9 @@ Worker → InputFactory / FrameSource契約
 
 GUIは`fah-api`を通じて操作します。DLL探索、推論モデル生成、FFmpeg起動を直接呼びません。共通API・アプリケーション・コアの各クレートはGPUIやWindows APIに依存しません。Windowsの`platform`モジュールが実装を組み立てます。
 
-AndroidのActivityとJNIは既存のホスト側アダプターとして維持しています。今回、AndroidのJava UIやライフサイクル制御は書き換えていません。Androidも新しい共有コアとncnnアダプターを利用します。
+AndroidのActivityとJava側のライフサイクル制御は維持しています。JNIは共通APIの`TrackingSession`を呼び出します。Androidも共通アプリケーション層、共有コア、ncnnアダプターを利用します。
+
+自動バックエンド選択の候補は`InferenceFactory::automatic_backends`で指定します。WindowsはCUDA、DirectML、CPUの順、AndroidはVulkan、CPUの順です。共通セッションにWindows固有の選択順はありません。
 
 ## 映像入力を差し替える
 
@@ -86,3 +88,25 @@ cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --lo
 ```
 
 ホスト契約のテストでは、カメラやGUIなしの同期推論、初期化候補の選択、CPU復旧時の結果表示、注入した映像入力の停止・終了時の解放を検証します。
+
+### Android向けにビルドする
+
+対象ABIは`arm64-v8a`です。SDK、NDK、ncnnの準備は[README](../README_ja.md)の手順に従います。Rustの`aarch64-linux-android`ターゲットも必要です。
+
+共通API以下とAndroidアダプターの型検査は、リポジトリのルートで実行します。
+
+```powershell
+cargo check -p fah-native -p fah-api -p fah-application -p fah-input --target aarch64-linux-android --release --locked
+```
+
+ネイティブライブラリのリンクとAPK生成にはGradleを使います。
+
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
+
+APKは`app/build/outputs/apk/debug/app-debug.apk`に出力されます。CMakeは共通クレートのソースとマニフェストを監視します。共通層の変更時もRustライブラリを再ビルドします。
+
+Android側の接続点は`app/src/main/rust/src/platform.rs`です。`session`は共通の`TrackingSession`を返します。対応バックエンドはncnnのCPUとVulkanです。CUDAとDirectMLを指定するとエラーを返します。
+
+JNIはBitmapから`Frame::from_rgba`で所有権付きのフレームを生成します。行末のパディングを除去し、推論前にBitmapのロックを解除します。ホストがRGBA8データを用意する場合も、このAPIを使えます。`fah-input`の静止画像入力もAndroidのビルド対象です。カメラ取得は引き続きJava側が担当します。

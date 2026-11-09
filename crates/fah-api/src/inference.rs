@@ -38,6 +38,10 @@ pub struct Capabilities {
 
 pub trait InferenceFactory: Send + Sync {
     fn capabilities(&self) -> Capabilities;
+    /// Ordered automatic choices supported by this platform.
+    fn automatic_backends(&self) -> &[Backend] {
+        &[Backend::Cpu]
+    }
     fn create(&self, models: &Path, backend: Backend) -> Result<Box<dyn Inference + Send>>;
     fn cpu_fallback(
         &self,

@@ -40,14 +40,22 @@ public final class MetalRuntime {
         guard boxes.shape.map(\.intValue) == [1,64,8400], scores.shape.map(\.intValue) == [1,2,8400] else {
             throw FAHAppleError.message("Expected detector s640x640 output shapes")
         }
-        func read(_ array: MLMultiArray, _ channel: Int, _ anchor: Int) throws -> Float {
-            let offset = channel * array.strides[1].intValue + anchor * array.strides[2].intValue
+        // Cache bridged Core ML metadata outside the half-million-element loop.
+        func reader(_ array: MLMultiArray) throws -> (Int, Int) -> Float {
+            let channelStride = array.strides[1].intValue
+            let anchorStride = array.strides[2].intValue
             switch array.dataType {
-            case .float16: return Float(array.dataPointer.assumingMemoryBound(to: Float16.self)[offset])
-            case .float32: return array.dataPointer.assumingMemoryBound(to: Float.self)[offset]
+            case .float16:
+                let pointer = array.dataPointer.assumingMemoryBound(to: Float16.self)
+                return { Float(pointer[$0 * channelStride + $1 * anchorStride]) }
+            case .float32:
+                let pointer = array.dataPointer.assumingMemoryBound(to: Float.self)
+                return { pointer[$0 * channelStride + $1 * anchorStride] }
             default: throw FAHAppleError.message("Unsupported detector output type")
             }
         }
+        let readBoxes = try reader(boxes)
+        let readScores = try reader(scores)
         var base = 0
         for stride in [8,16,32] {
             let width = 640 / stride
@@ -55,7 +63,7 @@ public final class MetalRuntime {
                 let anchor = base + index
                 var distance = [Float](repeating: 0, count: 4)
                 for side in 0..<4 {
-                    let logits = try (0..<16).map { try read(boxes, side * 16 + $0, anchor) }
+                    let logits = (0..<16).map { readBoxes(side * 16 + $0, anchor) }
                     guard logits.allSatisfy(\.isFinite) else { throw FAHAppleError.message("Non-finite DFL logits") }
                     let peak = logits.max()!
                     let weights = logits.map { exp($0 - peak) }
@@ -68,7 +76,7 @@ public final class MetalRuntime {
                 output[16800 + anchor] = (distance[0] + distance[2]) * scale
                 output[25200 + anchor] = (distance[1] + distance[3]) * scale
                 for channel in 0..<2 {
-                    let logit = try read(scores, channel, anchor)
+                    let logit = readScores(channel, anchor)
                     guard logit.isFinite else { throw FAHAppleError.message("Non-finite detector score") }
                     output[(4 + channel) * 8400 + anchor] = 1 / (1 + exp(-logit))
                 }

@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-10",
+  "device": "Apple M3",
+  "cause": "Repeated MLMultiArray metadata bridging during DFL decoding on every detection frame.",
+  "change": "Cache strides, data type and typed pointers once per output tensor; detection cadence and math unchanged.",
+  "before": {
+    "frames": 300,
+    "tracking": {
+      "frames": 262,
+      "median_total_ms": 32.894271,
+      "median_detector_ms": 0.0,
+      "max_total_ms": 67.938708
+    },
+    "detection": {
+      "frames": 38,
+      "median_total_ms": 222.860167,
+      "median_detector_ms": 183.9739165,
+      "max_total_ms": 553.145417
+    }
+  },
+  "after": {
+    "frames": 300,
+    "tracking": {
+      "frames": 252,
+      "median_total_ms": 35.530771,
+      "median_detector_ms": 0.0,
+      "max_total_ms": 69.074125
+    },
+    "detection": {
+      "frames": 48,
+      "median_total_ms": 42.6400835,
+      "median_detector_ms": 17.645812499999998,
+      "max_total_ms": 93.688833
+    }
+  },
+  "sample_image_max_joint_difference_pixels": 0.00091552734375,
+  "swift_release_tests_passed": 3,
+  "scope": "Separate live camera captures, not identical input. Timings are processing times, not capture-to-display latency."
+}

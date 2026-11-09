@@ -8,6 +8,9 @@ rust-version = "1.87"
 name = "fah_rust"
 crate-type = ["staticlib", "rlib"]
 
+[features]
+native-runtime = []
+
 [dependencies]
 serde_json = "1"
 

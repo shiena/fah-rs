@@ -1,5 +1,7 @@
 # fah-android
 
+Windows版も利用できます。GPUIのGUIで画像・動画・USBカメラを処理します。[ビルドと使い方](windows/README_ja.md)を参照してください。
+
 FAH-Sの手姿勢推定を、AndroidのVulkan Computeで実行する検証用アプリです。
 対象端末は、接続して検証したSony SO-51Aです。
 

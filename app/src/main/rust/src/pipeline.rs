@@ -350,7 +350,10 @@ impl Pipeline {
         )
     }
 }
-#[cfg(target_os = "android")]
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "windows", feature = "native-runtime")
+))]
 pub fn create(directory: &str, gpu: bool, half: bool) -> Result<Pipeline> {
     let path = directory.to_owned();
     Pipeline::new(

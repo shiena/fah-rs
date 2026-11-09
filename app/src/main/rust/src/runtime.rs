@@ -15,7 +15,10 @@ pub trait Inference {
     fn detect(&mut self, image: &Tensor) -> Result<Tensor>;
     fn pose(&mut self, image: &Tensor, rays: &Tensor, condition: &Tensor) -> Result<Vec<Tensor>>;
 }
-#[cfg(target_os = "android")]
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "windows", feature = "native-runtime")
+))]
 mod native {
     use super::*;
     use std::ffi::{c_char, c_void, CStr, CString};
@@ -35,6 +38,8 @@ mod native {
         ) -> *mut c_void;
         fn fah_runtime_destroy(runtime: *mut c_void);
         fn fah_error() -> *const c_char;
+        #[cfg(target_os = "windows")]
+        fn fah_shutdown();
         fn fah_gpu_info() -> *const c_char;
         fn fah_coverage(runtime: *mut c_void) -> *const c_char;
         fn fah_pose(
@@ -45,6 +50,14 @@ mod native {
             outputs: *mut View,
         ) -> bool;
         fn fah_detect(runtime: *mut c_void, image: *const f32, output: *mut View) -> bool;
+    }
+    /// Release the process-wide Vulkan instance before unloading the native DLL.
+    ///
+    /// # Safety
+    /// All runtimes and inference threads must have been dropped or joined.
+    #[cfg(target_os = "windows")]
+    pub unsafe fn shutdown() {
+        fah_shutdown();
     }
     pub struct Runtime(*mut c_void);
     // The runtime is only accessed under exclusive ownership or the JNI mutex.
@@ -141,5 +154,8 @@ mod native {
         }
     }
 }
-#[cfg(target_os = "android")]
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "windows", feature = "native-runtime")
+))]
 pub use native::*;

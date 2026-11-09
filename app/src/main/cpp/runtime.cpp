@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <cmath>
+#include <filesystem>
 
 namespace fah {
 std::string gpuInfo() {
@@ -26,13 +27,18 @@ Runtime::Runtime(const std::string& directory, bool gpu, bool half, bool detecto
     auto load = [&](ncnn::Net& net, const char* stem) {
         net.opt.num_threads = 4;
         net.opt.use_vulkan_compute = gpu;
+#ifdef _WIN32
+        // Retaining GPU intermediates avoids incorrect FP32 results with buffer reuse on RTX 5070.
+        if (gpu) net.opt.lightmode = false;
+#endif
         net.opt.use_fp16_packed = half;
         net.opt.use_fp16_storage = half;
         net.opt.use_fp16_arithmetic = false;
         net.opt.use_bf16_storage = false;
         if(gpu && std::string(stem)=="pose") registerVulkanOps(net);
-        if (net.load_param((directory + "/" + stem + ".ncnn.param").c_str()) ||
-            net.load_model((directory + "/" + stem + ".ncnn.bin").c_str()))
+        const auto base = std::filesystem::u8path(directory);
+        if (net.load_param((base / (std::string(stem) + ".ncnn.param")).c_str()) ||
+            net.load_model((base / (std::string(stem) + ".ncnn.bin")).c_str()))
             throw std::runtime_error(std::string("Failed to load ") + stem);
     };
     load(poseNet, "pose");

@@ -1,5 +1,7 @@
 # fah-android
 
+A Windows app with a GPUI interface supports images, videos, and USB cameras. See the [Windows build and usage guide](windows/README.md).
+
 [日本語](README_ja.md)
 
 An experimental Android app that runs FAH-S hand pose estimation with Vulkan Compute.

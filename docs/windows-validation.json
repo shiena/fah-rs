@@ -1,0 +1,287 @@
+{
+  "platform": "Windows x64",
+  "gpu": "NVIDIA GeForce RTX 5070",
+  "camera": "HD Pro Webcam C920",
+  "cpu": {
+    "backend": "cpu",
+    "runs": 3,
+    "median_ms": 42.4041,
+    "fps": 23.582625265009753,
+    "outputs": [
+      {
+        "index": 0,
+        "max": 4.0531158447265625e-06,
+        "mean": 5.568702929449184e-07
+      },
+      {
+        "index": 1,
+        "max": 3.0174851417541504e-07,
+        "mean": 6.916661041742292e-08
+      },
+      {
+        "index": 2,
+        "max": 4.9173831939697266e-06,
+        "mean": 1.9050092151521861e-07
+      },
+      {
+        "index": 3,
+        "max": 3.013014793395996e-05,
+        "mean": 4.486873525714021e-06
+      },
+      {
+        "index": 4,
+        "max": 5.960464477539062e-07,
+        "mean": 5.960464477539062e-07
+      },
+      {
+        "index": 5,
+        "max": 9.179115295410156e-06,
+        "mean": 4.857778549194336e-06
+      }
+    ],
+    "passed": true
+  },
+  "vulkan": {
+    "backend": "gpu",
+    "runs": 5,
+    "median_ms": 28.8416,
+    "fps": 34.67214024187285,
+    "outputs": [
+      {
+        "index": 0,
+        "max": 8.881092071533203e-06,
+        "mean": 2.0934676917152653e-06
+      },
+      {
+        "index": 1,
+        "max": 2.2724270820617676e-07,
+        "mean": 4.572729446769666e-08
+      },
+      {
+        "index": 2,
+        "max": 3.5762786865234375e-06,
+        "mean": 1.6720371559229953e-07
+      },
+      {
+        "index": 3,
+        "max": 2.47955322265625e-05,
+        "mean": 6.117955468384925e-06
+      },
+      {
+        "index": 4,
+        "max": 3.5762786865234375e-07,
+        "mean": 3.5762786865234375e-07
+      },
+      {
+        "index": 5,
+        "max": 7.230788469314575e-06,
+        "mean": 6.7148357629776e-06
+      }
+    ],
+    "passed": true
+  },
+  "vulkan_fixtures": {
+    "hand_right": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 20.7461,
+      "fps": 48.2018307055302,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 6.020069122314453e-06,
+          "mean": 1.9191144086792257e-06
+        },
+        {
+          "index": 1,
+          "max": 1.3783574104309082e-07,
+          "mean": 3.305502792797438e-08
+        },
+        {
+          "index": 2,
+          "max": 2.9653310775756836e-06,
+          "mean": 4.54655115102739e-07
+        },
+        {
+          "index": 3,
+          "max": 3.6716461181640625e-05,
+          "mean": 6.427160118769151e-06
+        },
+        {
+          "index": 4,
+          "max": 1.1920928955078125e-07,
+          "mean": 1.1920928955078125e-07
+        },
+        {
+          "index": 5,
+          "max": 3.8623809814453125e-05,
+          "mean": 2.3603439331054688e-05
+        }
+      ],
+      "passed": true
+    },
+    "hand_mirrored": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 20.980700000000002,
+      "fps": 47.66285204974095,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 5.0067901611328125e-06,
+          "mean": 1.5100920795101405e-06
+        },
+        {
+          "index": 1,
+          "max": 1.7881393432617188e-07,
+          "mean": 3.35555288467431e-08
+        },
+        {
+          "index": 2,
+          "max": 5.811452865600586e-06,
+          "mean": 5.837392522559507e-07
+        },
+        {
+          "index": 3,
+          "max": 4.661083221435547e-05,
+          "mean": 9.397702865351048e-06
+        },
+        {
+          "index": 4,
+          "max": 2.384185791015625e-07,
+          "mean": 2.384185791015625e-07
+        },
+        {
+          "index": 5,
+          "max": 4.76837158203125e-06,
+          "mean": 2.384185791015625e-06
+        }
+      ],
+      "passed": true
+    },
+    "hand_lower": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 27.4635,
+      "fps": 36.4119649716897,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 6.258487701416016e-06,
+          "mean": 1.7917434202099052e-06
+        },
+        {
+          "index": 1,
+          "max": 1.816079020500183e-07,
+          "mean": 3.706687942331769e-08
+        },
+        {
+          "index": 2,
+          "max": 8.016824722290039e-06,
+          "mean": 6.756634166597544e-07
+        },
+        {
+          "index": 3,
+          "max": 5.02467155456543e-05,
+          "mean": 1.5020048762964581e-05
+        },
+        {
+          "index": 4,
+          "max": 1.1920928955078125e-07,
+          "mean": 1.1920928955078125e-07
+        },
+        {
+          "index": 5,
+          "max": 1.049041748046875e-05,
+          "mean": 1.0013580322265625e-05
+        }
+      ],
+      "passed": true
+    },
+    "wide_crop": {
+      "backend": "gpu",
+      "runs": 1,
+      "median_ms": 20.6997,
+      "fps": 48.30987888713363,
+      "outputs": [
+        {
+          "index": 0,
+          "max": 4.827976226806641e-06,
+          "mean": 1.6388368192825813e-06
+        },
+        {
+          "index": 1,
+          "max": 9.685754776000977e-08,
+          "mean": 3.0305050680690276e-08
+        },
+        {
+          "index": 2,
+          "max": 5.036592483520508e-06,
+          "mean": 5.895736548492034e-07
+        },
+        {
+          "index": 3,
+          "max": 5.3882598876953125e-05,
+          "mean": 9.889968967877345e-06
+        },
+        {
+          "index": 4,
+          "max": 0.0,
+          "mean": 0.0
+        },
+        {
+          "index": 5,
+          "max": 5.459785461425781e-05,
+          "mean": 3.5881996154785156e-05
+        }
+      ],
+      "passed": true
+    }
+  },
+  "smoke": {
+    "sample": {
+      "frames": 1,
+      "backend": [
+        "vulkan"
+      ],
+      "cpu_fallback": false,
+      "max_hands": 2
+    },
+    "video": {
+      "frames": 30,
+      "backend": [
+        "vulkan"
+      ],
+      "cpu_fallback": false,
+      "max_hands": 2
+    },
+    "camera": {
+      "frames": 5,
+      "backend": [
+        "vulkan"
+      ],
+      "cpu_fallback": false,
+      "max_hands": 0
+    }
+  },
+  "gui": {
+    "camera_capture_and_hand_overlay": true,
+    "sample_image_and_video": true,
+    "cpu_vulkan_switch": true,
+    "stop_and_resume": true,
+    "png_json_save": true,
+    "saved_hands": 2
+  },
+  "checks": {
+    "windows_unit_tests": 3,
+    "shared_rust_unit_tests": 5,
+    "windows_clippy": "passed",
+    "android_assembleDebug": "passed"
+  },
+  "notes": [
+    "Pose timing excludes detection, capture and rendering.",
+    "Camera smoke frames contained no hands; hand overlay was verified separately in the GUI.",
+    "Windows Vulkan retains intermediate tensors for numerical correctness.",
+    "Camera images are excluded from version control."
+  ]
+}

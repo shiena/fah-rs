@@ -13,7 +13,7 @@ fn number(args: &[String], index: usize, default: usize) -> Result<usize> {
         .map(|s| s.parse::<usize>().map_err(|e| e.to_string()))
         .unwrap_or(Ok(default))
 }
-fn run(args: Vec<String>) -> Result<i32> {
+pub fn run(args: Vec<String>) -> Result<i32> {
     let dir = args
         .get(1)
         .ok_or("Usage: fah-check MODELS [cpu|gpu|half|image|video] [runs]")?;
@@ -110,6 +110,11 @@ fn run(args: Vec<String>) -> Result<i32> {
     );
     Ok(if passed { 0 } else { 2 })
 }
+/// Run the numerical check from a native command-line entry point.
+///
+/// # Safety
+/// `argc` must be nonnegative and `argv` must contain that many valid pointers
+/// to null-terminated strings, readable for the duration of this call.
 #[no_mangle]
 pub unsafe extern "C" fn fah_check_main(argc: i32, argv: *const *const c_char) -> i32 {
     let result = std::panic::catch_unwind(|| {

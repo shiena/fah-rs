@@ -1,8 +1,11 @@
 use std::{fs, path::Path};
 #[cfg(target_os = "android")]
 mod android;
-#[cfg(target_os = "android")]
-mod check;
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "windows", feature = "native-runtime")
+))]
+pub mod check;
 pub mod pipeline;
 pub mod runtime;
 pub type Result<T> = std::result::Result<T, String>;

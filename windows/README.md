@@ -62,7 +62,7 @@ At startup, CUDA is enabled only when its ONNX provider DLLs, CUDA runtime, cuBL
 
 Explicit **CUDA**, **DirectML**, **CPU**, or **Vulkan** selections report initialization errors without choosing another provider. An inference failure after successful initialization uses the shared pipeline's CPU recovery path; the preview and JSON show CPU. Both GPU providers use device index 0. ONNX Runtime may run unsupported operators on CPU within a GPU session.
 
-Select a camera, then click **カメラ開始** (Start camera). The same button becomes **カメラ停止** (Stop camera) and releases the device when clicked. **再検索** refreshes the device list. **左右反転** mirrors the camera preview and joints, including while paused. Saved PNG/JSON results and image/video inputs remain unmirrored.
+Select a camera, then click **カメラ開始** (Start camera). The same button becomes **カメラ停止** (Stop camera) and releases the device when clicked. Stopping the camera clears its preview and results, restoring the input placeholder. **再検索** refreshes the device list. **左右反転** mirrors the camera preview and joints. Saved PNG/JSON results and image/video inputs remain unmirrored.
 
 **画像・動画を開く** opens a file. **サンプル画像** uses the sample image. The adjacent video button needs the source checkout's FAH sample video. **結果を保存** saves a PNG with joint overlays and a JSON file.
 

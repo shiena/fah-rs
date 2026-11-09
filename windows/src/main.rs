@@ -310,6 +310,10 @@ impl Viewer {
         self.generation += 1;
         self.running = false;
         self.status = "停止中".into();
+        if matches!(self.source, Some(Source::Camera(_))) {
+            self.last = None;
+            self.image = None;
+        }
         let _ = self.worker.commands.send(Command::Stop);
         cx.notify();
     }

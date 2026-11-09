@@ -1,6 +1,7 @@
 """Export existing FAH checkpoints for the Apple adapter without loading MANO."""
 import argparse
 import importlib.util
+import shutil
 from pathlib import Path
 from types import SimpleNamespace as N
 
@@ -27,6 +28,9 @@ def main():
               cfg=N(MODEL=N(PROMPT_ENCODER={"MASK_EMBED_TYPE": "mask"})),
               prompt_encoder=N(no_mask_embed=N(weight=state["model.prompt_encoder.no_mask_embed.weight"])))
     args.out.mkdir(parents=True, exist_ok=True)
+    for sample in ["sample.png", "sample.rgba"]:
+        if (args.models / sample).is_file():
+            shutil.copy2(args.models / sample, args.out / sample)
     upstream.export_pose(N(student=pose.encoder, model=model), str(args.out / "fah-s-pose"))
     from fah.yolo import load_yolo
 

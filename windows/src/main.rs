@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
 mod cli;
-mod gui;
+use fah_gui as gui;
 use fah_windows::{inference, platform};
 fn main() {
     let result = cli::run();

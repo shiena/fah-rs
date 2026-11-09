@@ -1,0 +1,16 @@
+[package]
+name = "fah-macos"
+version = "0.1.0"
+edition = "2024"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+fah-api = { path = "../crates/fah-api" }
+fah-application = { path = "../crates/fah-application" }
+fah-core = { path = "../crates/fah-core" }
+fah-input = { path = "../crates/fah-input" }
+fah-gui = { path = "../crates/fah-gui" }
+fah-apple = { path = "../apple/rust" }
+libloading = "0.8"
+anyhow = "1"
+serde_json = "1"
+image = { version = "0.25", default-features = false }

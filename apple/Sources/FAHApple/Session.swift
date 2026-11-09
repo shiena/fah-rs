@@ -1,10 +1,7 @@
 import FAHCore
 import Foundation
-
-public enum FAHAppleError: Error, LocalizedError {
-    case message(String)
-    public var errorDescription: String? { if case .message(let text) = self { return text }; return nil }
-}
+import CoreVideo
+@_exported import FAHAppleNative
 
 private func callback(_ errorBuffer: UnsafeMutablePointer<CChar>?, _ operation: () throws -> Void) -> Int32 {
     do { try autoreleasepool(invoking: operation); return 0 }
@@ -69,5 +66,12 @@ public final class TrackingSession {
         guard let pointer else { return .message("Apple tracking failed") }
         defer { fah_apple_string_free(pointer) }
         return .message(String(cString: pointer))
+    }
+}
+
+extension TrackingSession {
+    public func process(pixelBuffer: CVPixelBuffer, reset: Bool = false) throws -> Data {
+        let frame = try FrameInput.rgba(from: pixelBuffer)
+        return try process(rgba: frame.data, width: frame.width, height: frame.height, stride: frame.stride, reset: reset)
     }
 }

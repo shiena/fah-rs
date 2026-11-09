@@ -3,12 +3,12 @@ import FAHMetal
 import Foundation
 
 // The raw network adapter preserves the Rust core's preprocessing and tracking.
-final class MetalRuntime {
+public final class MetalRuntime {
     let pose: FAHPoseNetwork
     let detector: MLModel
     let input: MLMultiArray
 
-    init(models: URL) throws {
+    public init(models: URL) throws {
         pose = try FAHPoseNetwork(modelDirectory: models, maxBatch: 1, contact: false)
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .all
@@ -21,7 +21,7 @@ final class MetalRuntime {
         input = try MLMultiArray(shape: [1, 3, 640, 640], dataType: .float16)
     }
 
-    func detect(_ image: UnsafePointer<Float>, output: UnsafeMutablePointer<Float>) throws {
+    public func detect(_ image: UnsafePointer<Float>, output: UnsafeMutablePointer<Float>) throws {
         let pointer = input.dataPointer.bindMemory(to: Float16.self, capacity: 3 * 640 * 640)
         let strides = input.strides.map(\.intValue)
         for c in 0..<3 { for y in 0..<640 { for x in 0..<640 {
@@ -77,7 +77,7 @@ final class MetalRuntime {
         }
     }
 
-    func predict(_ image: UnsafePointer<Float>, ray: UnsafePointer<Float>, condition: UnsafePointer<Float>, output: UnsafeMutablePointer<Float>) throws {
+    public func predict(_ image: UnsafePointer<Float>, ray: UnsafePointer<Float>, condition: UnsafePointer<Float>, output: UnsafeMutablePointer<Float>) throws {
         let (value, _) = try pose.predict(img: image, ray: ray, cond: condition, batch: 1)
         let arrays = [value.uv, value.xyz, value.conf, value.vis, value.depth, value.verify]
         guard arrays.map(\.count) == [922,1383,461,461,1,2] else {

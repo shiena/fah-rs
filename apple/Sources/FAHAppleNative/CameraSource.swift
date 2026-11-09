@@ -8,6 +8,13 @@ public final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBufferD
     private var handler: ((CVPixelBuffer) -> Void)?
     public let name: String
 
+    public static func devices() -> [AVCaptureDevice] {
+        #if os(macOS)
+        return AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera, .external, .continuityCamera], mediaType: .video, position: .unspecified).devices
+        #else
+        return AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
+        #endif
+    }
     public static func requestAccess(_ completion: @escaping (Bool) -> Void) {
         AVCaptureDevice.requestAccess(for: .video, completionHandler: completion)
     }

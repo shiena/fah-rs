@@ -31,10 +31,3 @@ public enum FrameInput {
         return (data, width, height, width * 4)
     }
 }
-
-extension TrackingSession {
-    public func process(pixelBuffer: CVPixelBuffer, reset: Bool = false) throws -> Data {
-        let frame = try FrameInput.rgba(from: pixelBuffer)
-        return try process(rgba: frame.data, width: frame.width, height: frame.height, stride: frame.stride, reset: reset)
-    }
-}

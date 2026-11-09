@@ -1,5 +1,7 @@
 # macOS／iOS用Metalアダプター
 
+Macの通常利用には[Windowsと共通のRust／GPUIアプリ](../macos/README.md)を使います。
+
 移植元の[fah-metal](https://github.com/LuckyIYI/fah-metal)を使い、Rust共通層で追跡します。
 対象はApple silicon Macとarm64のiOS端末です。ホストが映像入力を管理します。
 
@@ -124,7 +126,7 @@ macOS／iOSアプリで確認する場合は、XcodeでSwiftUI Appを作成し�
 その中に`sample.rgba`をコピーし、実機で［Run sample］を実行します。
 iOS実機へのインストールにはアプリ側の署名設定が必要です。
 
-## Macのカメラで確認する
+## AppKitの確認用ビューアーを使う
 
 次のコマンドでアプリをパッケージ化し、起動します。
 

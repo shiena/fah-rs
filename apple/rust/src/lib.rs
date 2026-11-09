@@ -41,6 +41,29 @@ impl Drop for Native {
     }
 }
 struct Runtime(Arc<Mutex<Native>>, Arc<Vec<f32>>);
+/// Wrap a native Metal network for the shared application worker.
+///
+/// # Safety
+/// A valid v1 callback context is transferred to Rust, including on grid errors.
+/// Callbacks must follow fah_apple.h; invalid tables do not transfer ownership.
+pub unsafe fn metal_runtime(
+    callbacks: FahMetalCallbacks,
+    grid: Vec<f32>,
+) -> Result<Box<dyn Inference + Send>> {
+    ensure!(
+        callbacks.abi_version == 1
+            && callbacks.detect.is_some()
+            && callbacks.pose.is_some()
+            && callbacks.destroy.is_some(),
+        "Invalid Metal callback ABI"
+    );
+    let native = Arc::new(Mutex::new(Native(callbacks)));
+    ensure!(
+        grid.len() == 800 && grid.iter().all(|v| v.is_finite()),
+        "Invalid camera grid"
+    );
+    Ok(Box::new(Runtime(native, Arc::new(grid))))
+}
 fn completed(status: i32, error: &[c_char; ERROR_LEN], output: &[f32]) -> fah_core::Result<()> {
     if status != 0 {
         let bytes: Vec<u8> = error

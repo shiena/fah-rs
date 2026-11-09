@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-10",
+  "device": "Apple M3",
+  "os": "macOS 27.0.1",
+  "xcode": "27.1",
+  "rust": "1.97.1",
+  "gui": "GPUI 0.2.2",
+  "camera_gui": {
+    "frames": 300,
+    "frames_with_hands": 291,
+    "max_hands": 2,
+    "backend": "metal",
+    "cpu_fallback": false,
+    "median_processing_ms": 33.2254375,
+    "finite_21_joints": true
+  },
+  "image_worker": {
+    "frames": 1,
+    "frames_with_hands": 1,
+    "max_hands": 2,
+    "backend": "metal",
+    "cpu_fallback": false,
+    "median_processing_ms": 225.839708,
+    "finite_21_joints": true
+  },
+  "video_worker": {
+    "frames": 30,
+    "frames_with_hands": 28,
+    "max_hands": 2,
+    "backend": "metal",
+    "cpu_fallback": false,
+    "median_processing_ms": 34.2410625,
+    "finite_21_joints": true
+  },
+  "swift_tests_passed": 2,
+  "scope": "Camera results consumed by GPUI; image/video processed through the same Worker. Processing time excludes capture and display. Not full PyTorch numerical parity.",
+  "font_kit_enabled": true,
+  "macos_clippy_passed": true,
+  "ui_text_confirmed_by_user": true
+}

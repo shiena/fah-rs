@@ -20,9 +20,11 @@ class ModelPreparationTests(unittest.TestCase):
             (source / "fah-s-pose.bin").write_bytes(bytes(256) + grid + b"suffix")
             metadata = {"tensors": {"uv_ds": {"offset": 256, "dtype": "f32", "shape": [400, 2]}}}
             (source / "fah-s-pose.json").write_text(json.dumps(metadata))
+            (source / "sample.png").write_bytes(b"sample image bytes")
             output = Path(temporary) / "output"
             MODELS.prepare(source, output, False)
             self.assertEqual((output / "uv_grid.f32").read_bytes(), grid)
+            self.assertEqual((output / "sample.png").read_bytes(), b"sample image bytes")
             self.assertEqual((output / "fah-s-pose.bin").read_bytes(), (source / "fah-s-pose.bin").read_bytes())
             metadata["tensors"]["uv_ds"]["offset"] = -1
             (source / "fah-s-pose.json").write_text(json.dumps(metadata))

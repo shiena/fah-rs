@@ -30,6 +30,9 @@ def prepare(source, output, compile_detector=True):
     for name in ["fah-s-pose.json", "fah-s-pose.bin"]:
         shutil.copy2(source / name, output / name)
     (output / "uv_grid.f32").write_bytes(camera)
+    for sample in ["sample.png", "sample.rgba"]:
+        if (source / sample).is_file():
+            shutil.copy2(source / sample, output / sample)
     if compile_detector:
         if platform.system() != "Darwin":
             raise RuntimeError("Core ML compilation requires macOS; use --skip-detector only for grid preparation")

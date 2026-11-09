@@ -1,6 +1,6 @@
 # fah-android
 
-macOS／iOS向けのMetalアダプターを追加しています。[ビルド手順と検証状況](apple/README.md)を参照してください。
+Macでは[Windowsと共通のRust／GPUIアプリ](macos/README.md)を使えます。macOS／iOS向けのMetalアダプターを追加しています。[ビルド手順と検証状況](apple/README.md)を参照してください。
 
 GUI・共通API・アプリケーション・追跡コア・プラットフォームの5層と映像入力アダプターを分離しています。[構成とUnity・Godot向けの接続境界](docs/architecture.md)を参照してください。
 

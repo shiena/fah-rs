@@ -6,7 +6,7 @@ Unity・Godot向けのプラグイン化に備え、GUI、アプリケーショ�
 
 | 層 | 配置 | 責務 |
 |---|---|---|
-| GUI | `windows/src/gui/` | GPUIの描画、操作、表示状態、ファイル選択 |
+| GUI | `crates/fah-gui/` | GPUIの描画、操作、表示状態、ファイル選択 |
 | 共通インターフェース | `crates/fah-api/` | フレーム・結果、開始停止コマンド、通知、実装差し替え用trait |
 | アプリケーション処理 | `crates/fah-application/` | 推論方式の選択、同期セッション、非同期ワーカー、描画用画像の生成、結果保存 |
 | 推論・追跡コア | `crates/fah-core/` | 切り出し、座標変換、追跡、再検出、推論実装を呼び出す処理 |
@@ -15,13 +15,13 @@ Unity・Godot向けのプラグイン化に備え、GUI、アプリケーショ�
 推論の実装は、Windowsの`windows/src/inference/`と共有の`crates/fah-ncnn/`、`backends/ncnn/cpp/`にあります。ncnn実装をAndroid配下から移し、WindowsとAndroidが同じ実装を参照する構成にしています。
 
 ```text
-windows/src/gui             → fah-api::Controller
+crates/fah-gui              → fah-api::Controller
                                     ↑ 実装
 fah-application::Worker     → fah-application::Session
                                     ↓
                                fah-core::Pipeline
                                     ↓ Inference契約
-                         ONNX Runtime / ncnnアダプター
+                         ONNX Runtime / ncnn / Metalアダプター
 
 Worker → InputFactory / FrameSource契約
                      ↑ 実装
@@ -69,6 +69,8 @@ cargo tree -p fah-windows --no-default-features
 ```
 
 Rustのtraitや`serde_json::Value`をそのままDLLの公開ABIにはしません。Apple連携用には`apple/include/fah_apple.h`のC境界を追加しています。セッションハンドル、RGBA8入力、JSON結果、ネットワーク実行コールバックを受け渡します。UnityのP/InvokeやGodotのGDExtension用バインディングは未実装です。
+
+macOSのGUIはWindowsと同じ`fah-gui`を使います。`macos/src/platform.rs`が共通ワーカーへMetal推論とAVFoundation入力を注入します。Swiftの`FAHAppleNative`はRustコアに依存しない動的ライブラリです。
 
 macOS／iOSは移植元のMetal姿勢推論とCore ML検出器を使います。切り出し・座標変換・追跡は同じRust共通層が担当します。Swift側の`FrameInput`で映像入力を分離しています。[Apple向けビルド手順と検証範囲](../apple/README.md)を参照してください。
 

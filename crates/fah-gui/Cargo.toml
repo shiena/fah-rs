@@ -1,0 +1,15 @@
+[package]
+name = "fah-gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fah-api = { path = "../fah-api" }
+gpui = { version = "=0.2.2", default-features = false, features = ["windows-manifest"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+anyhow = "1"
+serde_json = "1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# GPUI uses NoopTextSystem on macOS when font-kit is disabled.
+gpui = { version = "=0.2.2", default-features = false, features = ["font-kit"] }

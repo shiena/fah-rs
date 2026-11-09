@@ -1,3 +1,16 @@
+#[cfg(target_os = "macos")]
+const BACKENDS: &[(fah_api::Backend, &str)] = &[
+    (fah_api::Backend::Auto, "自動"),
+    (fah_api::Backend::Metal, "Metal"),
+];
+#[cfg(not(target_os = "macos"))]
+const BACKENDS: &[(fah_api::Backend, &str)] = &[
+    (fah_api::Backend::Auto, "自動"),
+    (fah_api::Backend::Cuda, "CUDA"),
+    (fah_api::Backend::DirectMl, "DirectML"),
+    (fah_api::Backend::Cpu, "CPU"),
+    (fah_api::Backend::Vulkan, "Vulkan"),
+];
 use fah_api::{Backend, Client, Command, Event, Options, Output, Request, Source};
 use gpui::{
     App, Application, Bounds, Context, Div, ObjectFit, PathPromptOptions, RenderImage,
@@ -143,10 +156,10 @@ impl Viewer {
         if let Some(output) = next.filter(|o| o.id == self.generation) {
             self.gpu_name = format!(
                 "{} / {}",
-                if self.backend == Backend::Vulkan {
-                    "ncnn"
-                } else {
-                    "ONNX"
+                match output.result["backend"].as_str() {
+                    Some("vulkan") => "ncnn",
+                    Some("metal") => "Metal",
+                    _ => "ONNX",
                 },
                 output.result["backend"].as_str().unwrap_or("unknown")
             );
@@ -354,7 +367,11 @@ impl Render for Viewer {
             .flex_col()
             .bg(rgb(0x0d1623))
             .text_color(rgb(0xd9e4f3))
-            .font_family("Yu Gothic UI")
+            .font_family(if cfg!(target_os = "macos") {
+                "Hiragino Sans"
+            } else {
+                "Yu Gothic UI"
+            })
             .child(
                 div()
                     .h(px(76.))
@@ -371,12 +388,13 @@ impl Render for Viewer {
                             .flex_col()
                             .gap_1()
                             .child(div().text_xl().child("FAH  /  Hand tracking"))
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(rgb(0x8d9fb5))
-                                    .child("WINDOWS · 21 JOINTS · 2 HANDS"),
-                            ),
+                            .child(div().text_xs().text_color(rgb(0x8d9fb5)).child(
+                                if cfg!(target_os = "macos") {
+                                    "MACOS · 21 JOINTS · 2 HANDS"
+                                } else {
+                                    "WINDOWS · 21 JOINTS · 2 HANDS"
+                                },
+                            )),
                     )
                     .child(
                         div()
@@ -511,47 +529,34 @@ impl Render for Viewer {
                                     .text_color(rgb(0x8d9fb5))
                                     .child("推論"),
                             )
-                            .child(
-                                div().flex().flex_wrap().gap_2().children(
-                                    [
-                                        (Backend::Auto, "自動"),
-                                        (Backend::Cuda, "CUDA"),
-                                        (Backend::DirectMl, "DirectML"),
-                                        (Backend::Cpu, "CPU"),
-                                        (Backend::Vulkan, "Vulkan"),
-                                    ]
-                                    .into_iter()
-                                    .map(|(backend, label)| {
-                                        let enabled =
-                                            backend != Backend::Cuda || self.cuda_available;
-                                        button(
-                                            label,
-                                            if enabled {
-                                                label
+                            .child(div().flex().flex_wrap().gap_2().children(
+                                BACKENDS.iter().copied().map(|(backend, label)| {
+                                    let enabled = backend != Backend::Cuda || self.cuda_available;
+                                    button(
+                                        label,
+                                        if enabled {
+                                            label
+                                        } else {
+                                            "CUDA（未導入）"
+                                        },
+                                        self.backend == backend,
+                                    )
+                                    .when(!enabled, |button| button.opacity(0.4).cursor_default())
+                                    .on_click(cx.listener(
+                                        move |view, _, _, cx| {
+                                            if !enabled {
+                                                return;
+                                            }
+                                            view.backend = backend;
+                                            if let Some(source) = view.source.clone() {
+                                                view.start(source, cx);
                                             } else {
-                                                "CUDA（未導入）"
-                                            },
-                                            self.backend == backend,
-                                        )
-                                        .when(!enabled, |button| {
-                                            button.opacity(0.4).cursor_default()
-                                        })
-                                        .on_click(
-                                            cx.listener(move |view, _, _, cx| {
-                                                if !enabled {
-                                                    return;
-                                                }
-                                                view.backend = backend;
-                                                if let Some(source) = view.source.clone() {
-                                                    view.start(source, cx);
-                                                } else {
-                                                    cx.notify();
-                                                }
-                                            }),
-                                        )
-                                    }),
-                                ),
-                            )
+                                                cx.notify();
+                                            }
+                                        },
+                                    ))
+                                }),
+                            ))
                             .child(
                                 button("models", "モデルフォルダー", false).on_click(
                                     cx.listener(|view, _, _, cx| view.choose_path(true, cx)),

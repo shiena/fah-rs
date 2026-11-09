@@ -2,6 +2,7 @@ import CoreML
 import CoreVideo
 import XCTest
 @testable import FAHApple
+@testable import FAHAppleNative
 
 final class AdapterTests: XCTestCase {
     func testDFLDecodePreservesChannelOrder() throws {

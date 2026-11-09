@@ -107,6 +107,14 @@ fn initialization_failure_destroys_transferred_context() {
     }
     assert_eq!(drops.load(Ordering::SeqCst), 1);
 }
+
+#[test]
+fn desktop_adapter_releases_context_when_grid_is_invalid() {
+    let drops = Arc::new(AtomicUsize::new(0));
+    let result = unsafe { metal_runtime(callbacks(drops.clone(), false), vec![]) };
+    assert!(result.is_err());
+    assert_eq!(drops.load(Ordering::SeqCst), 1);
+}
 fn grid() -> Vec<f32> {
     (0..400)
         .flat_map(|p| [(p % 20) as f32 * 16. + 7.5, (p / 20) as f32 * 16. + 7.5])

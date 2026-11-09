@@ -1,4 +1,5 @@
 .venv/
+.venv-litert/
 .gradle/
 **/build/
 **/.cxx/

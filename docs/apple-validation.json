@@ -1,0 +1,22 @@
+{
+  "device": "Apple M3",
+  "os": "macOS 27.0.1",
+  "xcode": "27.1",
+  "swift_tests_passed": 2,
+  "macos_build": true,
+  "ios_arm64_build": true,
+  "simulator_arm64_build": true,
+  "ios_device_runtime_tested": false,
+  "camera": {
+    "frames": 300,
+    "frames_with_hands": 289,
+    "max_hands": 2,
+    "backend": "metal",
+    "cpu_fallback": false,
+    "median_ms": 35.740916999999996,
+    "finite_21_joints": true
+  },
+  "date": "2026-11-10",
+  "upstream": "3ddc269a6a4ea8d921630ac4fc20d7d260375bca",
+  "scope": "Builds, sample inference, camera processing and finite joint outputs; not full PyTorch numerical parity."
+}

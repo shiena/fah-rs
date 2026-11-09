@@ -3,8 +3,11 @@
 移植元の[fah-metal](https://github.com/LuckyIYI/fah-metal)を使い、Rust共通層で追跡します。
 対象はApple silicon Macとarm64のiOS端末です。ホストが映像入力を管理します。
 
-**検証状況:** Windows上でRustの単体テストとAppleの3ターゲット向け静的ライブラリ生成を実施しています。
-Swift・Metalのビルド、Apple実機での推論・精度・性能は未検証です。
+**検証状況:** Apple M3、macOS 27.0.1、Xcode 27.1でビルドとカメラ推論を確認しました。
+カメラ300フレーム中289フレームで手を検出し、最大2手・各21関節を検証しました。
+推論時間の中央値は約35.7msでした。Swiftの2件のテストも成功しています。
+iOS実機向けとarm64 Simulator向けのビルドは成功しています。iOS実機での推論は未検証です。
+数値の詳細は[検証記録](../docs/apple-validation.json)を参照してください。
 この変更はライブラリとサンプルの追加です。Windows版GUIの全機能は移植していません。
 
 ## 構成
@@ -18,7 +21,9 @@ Swift・Metalのビルド、Apple実機での推論・精度・性能は未検�
 | Appleバックエンド | 移植元の`FAHPoseNetwork`とCore ML検出器を呼ぶ`MetalRuntime.swift` |
 | 映像入力 | `FrameInput`でBGRAの`CVPixelBuffer`をRGBA8へ変換 |
 
-移植元はコミット`3ddc269a6a4ea8d921630ac4fc20d7d260375bca`に固定しています。
+移植元のコミット`3ddc269a6a4ea8d921630ac4fc20d7d260375bca`から、姿勢ネットワーク・シェーダー・エクスポーターを`Vendor/fah-metal`へ取り込んでいます。
+Simulator SDKで未定義のMetal 4 GPU種別を参照しないよう、Simulatorではtensor opsを無効にしています。
+実機とmacOSの選択処理は移植元のままです。変更内容は[UPSTREAM.md](Vendor/fah-metal/UPSTREAM.md)を参照してください。
 Metal姿勢推論は移植元の自動選択を使います。対応GPUではtensor ops、その他ではsimdgroup matrixを選びます。
 検出器は`detector-640`の`s640x640`関数を使います。
 DFLデコード後のNMSはRust共通コアが担当します。
@@ -55,7 +60,7 @@ Apple側はMetal専用です。CPUフォールバックはありません。
    ```sh
    cd apple
    xcodebuild -scheme FAHApple -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO build
-   xcodebuild -scheme FAHApple -destination 'generic/platform=iOS Simulator' -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO build
+   xcodebuild -scheme FAHApple -destination 'generic/platform=iOS Simulator' -derivedDataPath build/simulator ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build
    ```
 
 Simulatorはビルド確認用です。GPU・Core MLの動作と性能は実機で確認します。
@@ -65,14 +70,30 @@ XCFrameworkにはRust共通層が入ります。Swiftアダプターと移植元
 ## モデルを準備する
 
 ncnn／ONNX形式のモデルはAppleアダプターで使えません。
-[fah-metalのセットアップ](https://github.com/LuckyIYI/fah-metal/tree/3ddc269a6a4ea8d921630ac4fc20d7d260375bca#setup)に従い、モデルをエクスポートします。
-移植元のエクスポーターにはFAH一式とMANOの準備が必要です。
-本アダプターの実行時には、エクスポートされたMANOデータは使いません。
+このリポジトリの`tools/setup.ps1`で準備したチェックポイントから、MANOを読み込まずにエクスポートできます。
+Windowsの既存Python環境では、次のコマンドを使います。
+
+```powershell
+.venv/Scripts/python.exe tools/export_apple.py
+```
+
+`models/apple-export`をMacへコピーします。Mac上の専用Python環境でCore MLへ変換します。
+検証時のバージョンはPython 3.12、PyTorch 2.15.0、coremltools 9.0、NumPy 2.3.5です。
+NumPy 2.5.4ではcoremltoolsの変換処理が失敗したため、2.3.5に固定しています。
+
+```sh
+uv venv --python 3.12 .venv-apple
+uv pip install --python .venv-apple/bin/python torch==2.15.0 coremltools==9.0 numpy==2.3.5
+.venv-apple/bin/python tools/apple-convert-detector.py models/apple-export
+```
+
+移植元の`tools/export.py`で作ったモデルも利用できます。
+移植元のエクスポーターを直接使う場合は、そちらのFAH・MANOの準備手順に従います。
 
 Mac上で、エクスポート済みのフォルダーを変換します。
 
 ```sh
-python3 tools/apple-models.py /path/to/fah-metal/models models/apple
+python3 tools/apple-models.py models/apple-export models/apple
 ```
 
 以下を出力します。
@@ -102,6 +123,23 @@ macOS／iOSアプリで確認する場合は、XcodeでSwiftUI Appを作成し�
 準備したモデルフォルダーを`models`というフォルダー参照で追加します。
 その中に`sample.rgba`をコピーし、実機で［Run sample］を実行します。
 iOS実機へのインストールにはアプリ側の署名設定が必要です。
+
+## Macのカメラで確認する
+
+次のコマンドでアプリをパッケージ化し、起動します。
+
+```sh
+python3 apple/camera-app.py --models models/apple --log artifacts/camera-results.jsonl
+```
+
+ログの親フォルダー`artifacts`は事前に作成します。`--log`は省略できます。
+初回はmacOSのカメラ使用許可を承認します。
+映像に関節を重ねて表示し、［Stop camera］で停止、［Start camera］で再開します。
+停止するとプレビューをクリアします。カメラ画像は保存しません。
+`--log`を指定した場合は、開始ごとに最大300フレームのJSON結果を追記します。
+
+アプリは`apple/build/FAH Camera.app`に生成されます。
+モデルの場所は起動引数で指定するため、再起動も上記のコマンドを使います。
 
 ## ホストの映像入力を使う
 

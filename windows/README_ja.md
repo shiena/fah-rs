@@ -1,6 +1,38 @@
 # Windows版
 
-GPUIで画像、動画、USBカメラに手の21関節を描画します。Android版とRustの追跡処理、ncnnのCPU・Vulkan推論を共有しています。
+Windows 11向けに、GPUIで画像、動画、USBカメラに手の21関節を描画します。Android版とRustの追跡処理を共有します。推論はONNX RuntimeのCUDA・DirectML・CPUに対応します。比較用にncnn/Vulkanも残しています。
+
+## ランタイムを導入する
+
+アプリとビルドスクリプトはランタイムを自動導入しません。最初に[Visual C++再頒布可能パッケージ（x64）](https://learn.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist)とGPUドライバーを導入します。
+
+### CUDAを使わない場合
+
+1. [Microsoft.ML.OnnxRuntime.DirectML 1.24.4](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML/1.24.4)をダウンロードします。nupkgはZIP形式です。
+2. パッケージの`runtimes/win-x64/native`内にある`onnxruntime.dll`と`onnxruntime_providers_shared.dll`を、exeの隣の`runtimes/directml`へ展開します。
+3. [Microsoft.AI.DirectML 1.15.4](https://www.nuget.org/packages/Microsoft.AI.DirectML/1.15.4)をダウンロードします。
+4. **`bin/x64-win/DirectML.dll`**を同じフォルダーへ展開します。Xbox用のDLLは使用しません。
+
+CPUもこのONNX RuntimeのCPU実装を使います。DirectML・CPUのどちらにもCUDAは不要です。
+
+### CUDAを使う場合
+
+1. [CUDA Toolkit 13.1](https://developer.nvidia.com/cuda-13-1-0-download-archive)を導入します。
+2. [cuDNN 9](https://developer.nvidia.com/cudnn-downloads)のWindows x86-64・CUDA 13用を導入します。
+3. CUDAとcuDNNのDLLフォルダーをユーザーの`PATH`に追加します。CUDA 13.1では通常、`C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1\bin\x64`です。cuDNNでは`cudnn64_9.dll`と関連DLLがあるフォルダーを指定します。
+4. [ONNX Runtime 1.31.1のWindows x64・CUDA 13版](https://github.com/microsoft/onnxruntime/releases/download/v1.31.1/onnxruntime-win-x64-gpu_cuda13-1.31.1.zip)をダウンロードします。
+5. `lib`内の`onnxruntime.dll`、`onnxruntime_providers_shared.dll`、`onnxruntime_providers_cuda.dll`を、exeの隣の`runtimes/cuda`へ展開します。
+6. アプリと起動元のターミナルを再起動します。
+
+CUDA版とDirectML版のDLLは別フォルダーに置きます。TensorRTは不要です。CUDAでは精度検証のためTF32を無効にしています。互換性は[ONNX Runtimeの対応条件](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)を参照します。
+
+DLLの配置先は環境変数`FAH_ORT_CUDA`と`FAH_ORT_DML`でも指定できます。値は各`onnxruntime.dll`の絶対パスです。環境変数、exeの隣の`runtimes`、開発用チェックアウトの順に検索します。開発用の配置先は[英語版README](README.md#install-inference-runtimes)に記載しています。
+
+## 推論方式を選ぶ
+
+［自動］はCUDA→DirectML→CPUの順に試します。候補ごとに両モデルを読み込み、ウォームアップ推論を行います。cuDNN不足のように最初の演算で発生するエラーも検出します。選択結果を画面に表示し、選択できなかった理由を保存JSONの`initialization_warning`に記録します。
+
+方式を明示して選択した場合、初期化に失敗するとエラーを表示します。初期化後の推論で失敗した場合は、共通処理でCPUへ切り替えます。画面とJSONには実際の方式が表示されます。CUDA・DirectMLのデバイス番号は0です。ONNX Runtimeが一部の演算をCPUへ割り当てる場合があります。
 
 ## ビルドと起動
 
@@ -10,18 +42,20 @@ GPUIで画像、動画、USBカメラに手の21関節を描画します。Andro
 - Visual Studioの「C++によるデスクトップ開発」
 - Git、CMake 3.22以降、NinjaをPATHに登録
 - 動画・カメラ用のFFmpeg（DirectShow対応）をPATHに登録
-- Vulkan対応のGPUドライバー
+- GPUドライバー（Vulkan選択時はVulkan対応が必要）
 
 リポジトリのルートで実行します。初回ビルドではncnnとRustの依存ライブラリを取得します。
 
 ```powershell
+.venv/Scripts/python.exe -m pip install -r requirements-onnx.txt
+.venv/Scripts/python.exe tools/export_onnx.py
 .\tools\windows.ps1 build
 .\tools\windows.ps1 run
 ```
 
 モデルは既存の`models`フォルダーを使用します。未取得の場合は、[共通の準備手順](../README_ja.md#準備する)の`tools/setup.ps1`で変換してください。Windowsアプリ自体のビルドにAndroid SDKは不要です。モデルの利用条件は[重みのライセンス](../licenses/FAH-WEIGHTS.txt)を参照してください。
 
-必要なモデルは`pose.ncnn.param`、`pose.ncnn.bin`、`detector.ncnn.param`、`detector.ncnn.bin`、`uv_grid.f32`です。サンプル画像には`sample.png`も必要です。
+ONNX推論に必要なモデルは`pose.onnx`、`detector.onnx`、`uv_grid.f32`です。上記の変換には共通の準備手順で取得する`model.pt`と`detector.pt`が必要です。Vulkanでは従来のncnnモデルを使用します。サンプル画像には`sample.png`も必要です。
 
 ビルド後は`windows/target/release/fah-windows.exe`を直接起動できます。`fah_backend.dll`は実行ファイルと同じ場所に置きます。モデルの場所は`--models`または画面の「モデルフォルダー」で指定できます。再ビルドの前にアプリを終了してください。
 
@@ -40,17 +74,20 @@ HD Pro Webcam C920で映像取得と手の描画を確認しています。映�
 ## コマンドで確認する
 
 ```powershell
-$app = '.\windows\target\release\fah-windows.exe'
-& $app --list-cameras
-& $app --models models --camera 'HD Pro Webcam C920'
-& $app --models models --sample
-& $app --models models --input 'C:\videos\hands.mp4' --cpu
-& $app --check models gpu 5
-& $app --models models --camera 'HD Pro Webcam C920' --smoke --frames 5 --output artifacts/windows-camera
+$app = (Resolve-Path windows/target/release/fah-windows.exe).Path
+Start-Process $app -ArgumentList '--list-cameras' -Wait -RedirectStandardOutput cameras.json
+Start-Process $app -ArgumentList '--models models --camera "HD Pro Webcam C920"'
+$p = Start-Process $app -ArgumentList '--check models directml 5' -Wait -PassThru -RedirectStandardOutput directml.json -RedirectStandardError directml.log
+$p.ExitCode
+$p = Start-Process $app -ArgumentList '--check models cuda 5' -Wait -PassThru -RedirectStandardOutput cuda.json -RedirectStandardError cuda.log
+$p.ExitCode
+Start-Process $app -ArgumentList '--models models --backend auto --sample-video --smoke --frames 30 --output artifacts/onnx-video' -Wait
 .\tools\windows.ps1 test
 ```
 
 `--smoke`は画面を開かず、指定フレーム数の結果を`results.json`と`last-frame.png`に保存して終了します。画像入力では1フレームを処理します。
+
+GUI実行ファイルの終了を待つため、検証には`Start-Process -Wait`を使います。`--check`は`cpu`、`cuda`、`directml`、`gpu`（従来のVulkan）を指定できます。通常起動時は`--backend auto|cuda|directml|cpu|vulkan`で方式を選択します。
 
 ## 実装上の制限と検証
 
@@ -58,6 +95,8 @@ $app = '.\windows\target\release\fah-windows.exe'
 - 「推論FPS」は推論時間の逆数です。撮影・描画を含む実効FPSとは異なります。「取得→結果」はFFmpegからのフレーム受信後を計測し、カメラ内部の遅延は含みません。
 - 3D座標には画像サイズから推定したカメラ内部パラメーターを使用します。
 - WindowsのVulkanでは中間テンソルを保持します。RTX 5070でバッファー再利用時の数値不一致を避けるためで、メモリー消費が増えます。終了時にはVulkanを明示的に解放します。
-- 推論はFP32です。CUDAは使用していません。
+- 推論はFP32です。
 
-RTX 5070でCPU・Vulkanの参照値比較と4種類の実画像由来のVulkan入力検査が通過しました。姿勢ネットワーク単体の中央値はCPU約42 ms、Vulkan約29 msです。サンプル画像の2手描画、動画30フレーム、USBカメラの処理、画面操作、PNG・JSON保存を確認しました。測定の詳細は[検証結果](../docs/windows-validation.json)を参照してください。
+RTX 5070でDirectMLの参照値比較と4種類の実画像由来の入力検査が通過しました。姿勢推定単体の中央値はDirectML約4.6 ms、ONNXのCPU約44 msです。以前のVulkan約29 msは別の実行での測定です。サンプル画像の2手描画、動画30フレーム、CUDAからDirectMLへの切り替えを確認しました。
+
+このPCにはCUDA 13.1がありますが、cuDNNがありません。CUDA版ONNX Runtimeの読み込みと依存不足の検出は確認しました。CUDAの精度・速度はcuDNN導入後の検証が必要です。[ONNX版の検証結果](../docs/windows-onnx-validation.json)と[従来版の検証結果](../docs/windows-validation.json)を参照してください。

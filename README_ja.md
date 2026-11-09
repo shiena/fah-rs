@@ -2,6 +2,8 @@
 
 Windows版も利用できます。GPUIのGUIで画像・動画・USBカメラを処理します。[ビルドと使い方](windows/README_ja.md)を参照してください。
 
+Windows 11版はCUDA・DirectML・CPUに対応します。[ランタイムの導入手順](windows/README_ja.md#ランタイムを導入する)に従い、`tools/export_onnx.py`でモデルを変換します。CUDAを使う場合はCUDA 13.xとCUDA 13用cuDNN 9が必要です。アプリによる自動導入は行いません。
+
 FAH-Sの手姿勢推定を、AndroidのVulkan Computeで実行する検証用アプリです。
 対象端末は、接続して検証したSony SO-51Aです。
 

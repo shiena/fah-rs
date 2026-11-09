@@ -1300,6 +1300,8 @@ dependencies = [
  "fah-native",
  "gpui",
  "image",
+ "libloading",
+ "ort-sys",
  "serde_json",
 ]
 
@@ -3082,6 +3084,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ort-sys"
+version = "2.0.0-rc.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2aba9f5c7c479925205799216e7e5d07cc1d4fa76ea8058c60a9a30f6a4e890"
+dependencies = [
+ "pkg-config",
+]
+
+[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3205,6 +3216,12 @@ dependencies = [
  "fastrand 2.5.0",
  "futures-io",
 ]
+
+[[package]]
+name = "pkg-config"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "png"

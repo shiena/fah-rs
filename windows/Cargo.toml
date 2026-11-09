@@ -10,6 +10,8 @@ gpui = { version = "=0.2.2", default-features = false, features = ["windows-mani
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp"] }
 serde_json = "1"
 anyhow = "1"
+ort-sys = { version = "=2.0.0-rc.10", features = ["disable-linking"] }
+libloading = "0.8"
 
 [profile.release]
 opt-level = 3

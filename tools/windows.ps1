@@ -42,7 +42,7 @@ try {
         $env:PATH = (Join-Path $root 'windows/native/build') + ';' + $env:PATH
         cargo test --manifest-path app/src/main/rust/Cargo.toml
         if ($LASTEXITCODE) { throw 'Shared Rust tests failed.' }
-        cargo test --manifest-path windows/Cargo.toml --locked -j $Jobs
+        cargo test --manifest-path windows/Cargo.toml --release --locked -j $Jobs
         if ($LASTEXITCODE) { throw 'Windows tests failed.' }
     } elseif ($Action -eq 'run') {
         & windows/target/release/fah-windows.exe --models $Models

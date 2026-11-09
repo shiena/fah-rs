@@ -1,0 +1,202 @@
+{
+  "date": "2026-11-09",
+  "platform": "Windows 11 x64",
+  "gpu": "NVIDIA GeForce RTX 5070",
+  "runtimes": {
+    "directml": "ONNX Runtime 1.24.4 / DirectML 1.15.4",
+    "cuda": "ONNX Runtime 1.31.1 CUDA 13 / Toolkit 13.1; cuDNN absent"
+  },
+  "pose_checks": {
+    "cpu": {
+      "backend": "cpu",
+      "runs": 5,
+      "median_ms": 43.8785,
+      "max_errors": [
+        7.569789886474609e-06,
+        3.650784492492676e-07,
+        5.304813385009766e-06,
+        1.8596649169921875e-05,
+        8.344650268554688e-07,
+        6.9141387939453125e-06
+      ],
+      "passed": true
+    },
+    "directml": {
+      "backend": "directml",
+      "runs": 5,
+      "median_ms": 4.6004000000000005,
+      "max_errors": [
+        2.652406692504883e-06,
+        2.905726432800293e-07,
+        3.039836883544922e-06,
+        2.9206275939941406e-05,
+        7.152557373046875e-07,
+        3.4570693969726562e-06
+      ],
+      "passed": true
+    },
+    "directml_final_with_profiling": {
+      "backend": "directml",
+      "runs": 3,
+      "median_ms": 5.182,
+      "max_errors": [
+        2.652406692504883e-06,
+        2.905726432800293e-07,
+        3.039836883544922e-06,
+        2.9206275939941406e-05,
+        7.152557373046875e-07,
+        3.4570693969726562e-06
+      ],
+      "passed": true
+    }
+  },
+  "fixtures": {
+    "hand_right": {
+      "backend": "directml",
+      "runs": 3,
+      "median_ms": 4.453,
+      "max_errors": [
+        1.0132789611816406e-06,
+        1.210719347000122e-07,
+        3.337860107421875e-06,
+        3.3855438232421875e-05,
+        2.384185791015625e-07,
+        5.2928924560546875e-05
+      ],
+      "passed": true
+    },
+    "hand_mirrored": {
+      "backend": "directml",
+      "runs": 3,
+      "median_ms": 4.5814,
+      "max_errors": [
+        1.1920928955078125e-06,
+        1.6391277313232422e-07,
+        1.2546777725219727e-05,
+        8.374452590942383e-05,
+        2.384185791015625e-07,
+        1.6689300537109375e-05
+      ],
+      "passed": true
+    },
+    "hand_lower": {
+      "backend": "directml",
+      "runs": 3,
+      "median_ms": 4.4512,
+      "max_errors": [
+        2.086162567138672e-06,
+        1.3783574104309082e-07,
+        5.930662155151367e-06,
+        4.1961669921875e-05,
+        1.1920928955078125e-07,
+        3.814697265625e-06
+      ],
+      "passed": true
+    },
+    "wide_crop": {
+      "backend": "directml",
+      "runs": 3,
+      "median_ms": 4.5183,
+      "max_errors": [
+        1.0132789611816406e-06,
+        9.685754776000977e-08,
+        9.357929229736328e-06,
+        8.0108642578125e-05,
+        2.384185791015625e-07,
+        6.937980651855469e-05
+      ],
+      "passed": true
+    }
+  },
+  "smoke": {
+    "video": {
+      "frames": 30,
+      "backends": [
+        "directml"
+      ],
+      "max_hands": 2,
+      "inference_cpu_fallback": false,
+      "initialization_warning": true
+    },
+    "camera": {
+      "frames": 15,
+      "backends": [
+        "directml"
+      ],
+      "max_hands": 1,
+      "inference_cpu_fallback": false,
+      "initialization_warning": false
+    },
+    "auto": {
+      "frames": 1,
+      "backends": [
+        "directml"
+      ],
+      "max_hands": 2,
+      "inference_cpu_fallback": false,
+      "initialization_warning": true
+    },
+    "no-cuda": {
+      "frames": 1,
+      "backends": [
+        "directml"
+      ],
+      "max_hands": 2,
+      "inference_cpu_fallback": false,
+      "initialization_warning": true
+    },
+    "cpu-fallback": {
+      "frames": 1,
+      "backends": [
+        "cpu"
+      ],
+      "max_hands": 2,
+      "inference_cpu_fallback": false,
+      "initialization_warning": true,
+      "setup": "Missing CUDA path; DirectML path pointed to a runtime without the DML provider but with CPU support."
+    },
+    "final-auto": {
+      "frames": 1,
+      "backends": [
+        "directml"
+      ],
+      "max_hands": 2,
+      "inference_cpu_fallback": false,
+      "initialization_warning": true
+    }
+  },
+  "cuda": {
+    "initialization_and_model_load": "passed",
+    "warmup": "expected failure: cudnn64_9.dll missing",
+    "explicit_selection_exit_code": 1,
+    "numerical_accuracy": "not tested",
+    "performance": "not tested",
+    "automatic_recovery": "DirectML, exit 0"
+  },
+  "placement": {
+    "onnx-placement-detector.onnx_2026-11-09_22-46-09.json": {
+      "DmlExecutionProvider": 1
+    },
+    "onnx-placement-pose.onnx_2026-11-09_22-46-09.json": {
+      "DmlExecutionProvider": 6
+    }
+  },
+  "gui": {
+    "auto_sample_two_hands": true,
+    "switch_to_cpu": true,
+    "switch_to_vulkan": true,
+    "explicit_cuda_error": true,
+    "recover_to_directml": true
+  },
+  "build_checks": {
+    "release_build": "passed",
+    "release_clippy_all_targets": "passed",
+    "windows_unit_tests": 3
+  },
+  "notes": [
+    "Inference runtimes were extracted into ignored third_party folders for development. No system CUDA/cuDNN installation or global PATH change was made.",
+    "DirectML placement profiling showed DML provider execution for both models. Event counts include warm-up and repeated runs.",
+    "Pose timings exclude detector, capture and rendering. Prior Vulkan timing is a separate run.",
+    "Camera images are not committed."
+  ]
+}

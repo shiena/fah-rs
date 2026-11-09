@@ -1,4 +1,5 @@
 use crate::media::{Frame, Input, Source, validate_models};
+use crate::onnx::{self, Backend};
 use fah_rust::pipeline::Pipeline;
 use image::{Rgba, RgbaImage};
 use serde_json::Value;
@@ -15,7 +16,7 @@ use std::{
 pub struct Request {
     pub id: u64,
     pub models: PathBuf,
-    pub gpu: bool,
+    pub backend: Backend,
     pub source: Source,
 }
 pub enum Command {
@@ -27,7 +28,7 @@ pub enum Command {
 }
 pub enum Event {
     Loading(u64),
-    Ready(u64, String),
+    Ready(u64, String, String),
     Finished(u64),
     Error(u64, String),
     Cameras(Result<Vec<String>, String>),
@@ -69,9 +70,11 @@ impl Drop for Worker {
 }
 fn run(commands: Receiver<Command>, events: Sender<Event>, frame: Arc<Mutex<Option<Output>>>) {
     let mut pipeline: Option<Pipeline> = None;
-    let mut loaded: Option<(PathBuf, bool)> = None;
+    let mut loaded: Option<(PathBuf, Backend)> = None;
     let mut input: Option<Input> = None;
     let mut id = 0;
+    let mut active_backend = Backend::Cpu;
+    let mut warning = String::new();
     let mut reset = true;
     let mut last_frame = Instant::now();
     loop {
@@ -94,19 +97,16 @@ fn run(commands: Receiver<Command>, events: Sender<Event>, frame: Arc<Mutex<Opti
                 *frame.lock().unwrap() = None;
                 let _ = events.send(Event::Loading(id));
                 let result = (|| -> anyhow::Result<Input> {
-                    validate_models(&request.models)?;
-                    let key = (request.models.clone(), request.gpu);
+                    validate_models(&request.models, request.backend)?;
+                    let key = (request.models.clone(), request.backend);
                     if loaded.as_ref() != Some(&key) {
                         pipeline = None;
                         loaded = None;
-                        let directory = request
-                            .models
-                            .to_str()
-                            .ok_or_else(|| anyhow::anyhow!("Invalid model directory"))?;
-                        pipeline = Some(
-                            fah_rust::pipeline::create(directory, request.gpu, false)
-                                .map_err(anyhow::Error::msg)?,
-                        );
+                        let (new_pipeline, selected, notice) =
+                            onnx::create(&request.models, request.backend)?;
+                        pipeline = Some(new_pipeline);
+                        active_backend = selected;
+                        warning = notice;
                         loaded = Some(key);
                     }
                     Input::open(&request.source)
@@ -115,7 +115,19 @@ fn run(commands: Receiver<Command>, events: Sender<Event>, frame: Arc<Mutex<Opti
                     Ok(source) => {
                         input = Some(source);
                         last_frame = Instant::now();
-                        let _ = events.send(Event::Ready(id, fah_rust::runtime::gpu_info()));
+                        let _ = events.send(Event::Ready(
+                            id,
+                            format!(
+                                "{} / {}",
+                                if active_backend == Backend::Vulkan {
+                                    "ncnn"
+                                } else {
+                                    "ONNX"
+                                },
+                                active_backend.name()
+                            ),
+                            warning.clone(),
+                        ));
                     }
                     Err(error) => {
                         let _ = events.send(Event::Error(id, format!("{error:#}")));
@@ -140,7 +152,13 @@ fn run(commands: Receiver<Command>, events: Sender<Event>, frame: Arc<Mutex<Opti
                         reset,
                     )
                     .map_err(anyhow::Error::msg)?;
-                let result = serde_json::from_str(&json)?;
+                let mut result: Value = serde_json::from_str(&json)?;
+                if result["cpu_fallback"] != true {
+                    result["backend"] = active_backend.name().into();
+                }
+                result["requested_backend"] = loaded.as_ref().unwrap().1.name().into();
+                result["initialization_warning"] = warning.clone().into();
+                result["initialization_fallback"] = (!warning.is_empty()).into();
                 *frame.lock().unwrap() = Some(Output {
                     id,
                     image,

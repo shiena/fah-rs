@@ -1,6 +1,8 @@
 #![windows_subsystem = "windows"]
 
 mod media;
+mod onnx;
+use onnx::Backend;
 mod worker;
 use gpui::{
     App, Application, Bounds, Context, Div, ObjectFit, PathPromptOptions, RenderImage,
@@ -18,7 +20,7 @@ use worker::{Command, Event, Output, Request, Worker};
 struct Options {
     models: PathBuf,
     source: Option<Source>,
-    gpu: bool,
+    backend: Backend,
     smoke: bool,
     frames: usize,
     output: PathBuf,
@@ -40,7 +42,7 @@ impl Options {
         let mut result = Self {
             models,
             source: None,
-            gpu: true,
+            backend: Backend::Auto,
             smoke: false,
             frames: 3,
             output: PathBuf::from("artifacts/windows-smoke"),
@@ -70,7 +72,11 @@ impl Options {
                         root.join("third_party/FAH/docs/assets/videos/test_video_selfie.mp4"),
                     ))
                 }
-                "--cpu" => result.gpu = false,
+                "--cpu" => result.backend = Backend::Cpu,
+                "--backend" => {
+                    result.backend = Backend::parse(value(i)?)?;
+                    i += 1;
+                }
                 "--smoke" => result.smoke = true,
                 "--frames" => {
                     result.frames = value(i)?.parse()?;
@@ -105,11 +111,24 @@ fn run() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     if args.get(1).is_some_and(|s| s == "--help") {
         println!(
-            "FAH Windows\n  --models DIRECTORY\n  --sample | --sample-video | --input FILE | --camera NAME\n  --cpu\n  --list-cameras\n  --check MODELS cpu|gpu RUNS [FIXTURE]\n  --smoke --frames N --output DIRECTORY\nWithout input options, the GUI opens without activating a camera."
+            "FAH Windows\n  --models DIRECTORY\n  --sample | --sample-video | --input FILE | --camera NAME\n  --backend auto|cuda|directml|cpu|vulkan\n  --cpu\n  --list-cameras\n  --check MODELS cpu|cuda|directml|gpu RUNS [FIXTURE]\n  --smoke --frames N --output DIRECTORY\nWithout input options, the GUI opens without activating a camera."
         );
         return Ok(());
     }
     if args.get(1).is_some_and(|s| s == "--check") {
+        if args
+            .get(3)
+            .is_some_and(|s| ["cuda", "directml", "cpu"].contains(&s.as_str()))
+        {
+            let models = PathBuf::from(
+                args.get(2)
+                    .ok_or_else(|| anyhow::anyhow!("Missing models"))?,
+            );
+            let backend = Backend::parse(&args[3])?;
+            let runs = args.get(4).map(|s| s.parse()).transpose()?.unwrap_or(5);
+            let fixture = args.get(5).map(PathBuf::from).unwrap_or(models.clone());
+            return onnx::check(&models, backend, runs, &fixture);
+        }
         let mut check = vec![args[0].clone()];
         check.extend_from_slice(&args[2..]);
         let code = fah_rust::check::run(check).map_err(anyhow::Error::msg)?;
@@ -164,7 +183,7 @@ fn smoke(options: Options) -> anyhow::Result<()> {
     worker.commands.send(Command::Start(Request {
         id: 1,
         models: options.models,
-        gpu: options.gpu,
+        backend: options.backend,
         source,
     }))?;
     std::fs::create_dir_all(&options.output)?;
@@ -209,7 +228,7 @@ fn smoke(options: Options) -> anyhow::Result<()> {
 struct Viewer {
     worker: Worker,
     models: PathBuf,
-    gpu: bool,
+    backend: Backend,
     generation: u64,
     source: Option<Source>,
     running: bool,
@@ -230,7 +249,7 @@ impl Viewer {
         let mut view = Self {
             worker,
             models: options.models,
-            gpu: options.gpu,
+            backend: options.backend,
             generation: 0,
             source: None,
             running: false,
@@ -267,6 +286,7 @@ impl Viewer {
         self.last = None;
         self.image = None;
         self.status = "モデルと入力を準備中…".into();
+        self.gpu_name = "準備中".into();
         self.source = Some(source.clone());
         if self
             .worker
@@ -274,7 +294,7 @@ impl Viewer {
             .send(Command::Start(Request {
                 id: self.generation,
                 models: self.models.clone(),
-                gpu: self.gpu,
+                backend: self.backend,
                 source,
             }))
             .is_err()
@@ -311,6 +331,15 @@ impl Viewer {
         let mut changed = false;
         let next = self.worker.frame.lock().unwrap().take();
         if let Some(output) = next.filter(|o| o.id == self.generation) {
+            self.gpu_name = format!(
+                "{} / {}",
+                if self.backend == Backend::Vulkan {
+                    "ncnn"
+                } else {
+                    "ONNX"
+                },
+                output.result["backend"].as_str().unwrap_or("unknown")
+            );
             self.last = Some(output);
             self.rebuild_image();
             self.status = "推論中".into();
@@ -322,11 +351,15 @@ impl Viewer {
                 Event::Loading(id) if id == self.generation => {
                     self.status = "モデルと入力を準備中…".into()
                 }
-                Event::Ready(id, info) if id == self.generation => {
-                    self.gpu_name = serde_json::from_str::<serde_json::Value>(&info)
-                        .ok()
-                        .and_then(|v| v["name"].as_str().map(str::to_owned))
-                        .unwrap_or("GPUなし".into());
+                Event::Ready(id, info, warning) if id == self.generation => {
+                    self.gpu_name = info;
+                    if !warning.is_empty() {
+                        eprintln!("{warning}");
+                        self.error = Some(format!(
+                            "自動選択: {}を使用します。先行候補を利用できませんでした。詳細は保存JSONのinitialization_warningに記録します。",
+                            self.gpu_name
+                        ));
+                    }
                     self.status = "フレームを待機中…".into();
                 }
                 Event::Finished(id) if id == self.generation => {
@@ -335,6 +368,7 @@ impl Viewer {
                 }
                 Event::Error(id, error) if id == self.generation => {
                     self.running = false;
+                    self.gpu_name = "推論停止".into();
                     self.status = "エラー".into();
                     self.error = Some(error);
                 }
@@ -459,7 +493,7 @@ impl Render for Viewer {
         let timing = result.and_then(|v| v["total_ms"].as_f64());
         let backend = result
             .and_then(|v| v["backend"].as_str())
-            .unwrap_or(if self.gpu { "vulkan" } else { "cpu" });
+            .unwrap_or(self.backend.name());
         let fallback = result.is_some_and(|v| v["cpu_fallback"] == true);
         let camera_buttons: Vec<_> = self
             .cameras
@@ -543,9 +577,9 @@ impl Render for Viewer {
                             cx.notify();
                         })))
                     .child(div().mt_3().text_xs().text_color(rgb(0x8d9fb5)).child("推論"))
-                    .child(div().flex().gap_2().children([(true,"GPU / Vulkan"),(false,"CPU")].into_iter().map(|(gpu,label)| {
-                        button(label,label,self.gpu==gpu).on_click(cx.listener(move |view,_,_,cx|{
-                            view.gpu=gpu;if let Some(source)=view.source.clone() {view.start(source,cx);}else{cx.notify();}
+                    .child(div().flex().flex_wrap().gap_2().children([(Backend::Auto,"自動"),(Backend::Cuda,"CUDA"),(Backend::DirectMl,"DirectML"),(Backend::Cpu,"CPU"),(Backend::Vulkan,"Vulkan")].into_iter().map(|(backend,label)| {
+                        button(label,label,self.backend==backend).on_click(cx.listener(move |view,_,_,cx|{
+                            view.backend=backend;if let Some(source)=view.source.clone() {view.start(source,cx);}else{cx.notify();}
                         }))
                     })))
                     .child(button("models","モデルフォルダー",false).on_click(cx.listener(|view,_,_,cx|view.choose_path(true,cx))))
@@ -568,6 +602,6 @@ impl Render for Viewer {
                         .child(button("reset","再検出",false).on_click(cx.listener(|view,_,_,cx|{if view.running {let _=view.worker.commands.send(Command::Reset);}else if let Some(source)=view.source.clone(){view.start(source,cx);}})))
                         .child(button("overlay","関節を表示",self.show_joints).on_click(cx.listener(|view,_,_,cx|{view.show_joints = !view.show_joints;view.rebuild_image();cx.notify();})))
                         .child(button("save","結果を保存",false).on_click(cx.listener(|view,_,_,cx|view.save(cx)))))
-                    .when_some(self.error.clone(),|d,error|d.child(div().p_3().rounded_md().bg(rgb(0x442832)).text_sm().text_color(rgb(0xffc0bd)).child(error)))))
+                    .when_some(self.error.clone(),|d,error|d.child(div().id("runtime-message").max_h(px(100.)).overflow_y_scroll().p_3().rounded_md().bg(rgb(0x442832)).text_sm().text_color(rgb(0xffc0bd)).child(error)))))
     }
 }

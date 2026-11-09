@@ -2,6 +2,8 @@
 
 A Windows app with a GPUI interface supports images, videos, and USB cameras. See the [Windows build and usage guide](windows/README.md).
 
+Windows 11 inference supports CUDA, DirectML (no CUDA required), and CPU. Follow the [runtime installation steps](windows/README.md#install-inference-runtimes), then export the ONNX models with `tools/export_onnx.py`. CUDA requires CUDA 13.x and the CUDA 13 build of cuDNN 9. The app does not install these dependencies automatically.
+
 [日本語](README_ja.md)
 
 An experimental Android app that runs FAH-S hand pose estimation with Vulkan Compute.

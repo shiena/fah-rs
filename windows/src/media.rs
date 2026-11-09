@@ -251,14 +251,19 @@ impl Drop for Stream {
         }
     }
 }
-pub fn validate_models(directory: &Path) -> Result<()> {
-    for name in [
-        "pose.ncnn.param",
-        "pose.ncnn.bin",
-        "detector.ncnn.param",
-        "detector.ncnn.bin",
-        "uv_grid.f32",
-    ] {
+pub fn validate_models(directory: &Path, backend: crate::onnx::Backend) -> Result<()> {
+    let files: &[&str] = if backend == crate::onnx::Backend::Vulkan {
+        &[
+            "pose.ncnn.param",
+            "pose.ncnn.bin",
+            "detector.ncnn.param",
+            "detector.ncnn.bin",
+            "uv_grid.f32",
+        ]
+    } else {
+        &["pose.onnx", "detector.onnx", "uv_grid.f32"]
+    };
+    for name in files {
         if !directory.join(name).is_file() {
             bail!("モデルがありません: {}", directory.join(name).display());
         }

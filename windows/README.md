@@ -1,44 +1,93 @@
-# FAH for Windows
+# FAH for Windows 11
 
-The GPUI app displays 21 hand joints over images, videos, and USB camera streams. It shares the Rust tracking pipeline and ncnn CPU/Vulkan runtime with the Android app. See the [Japanese guide](README_ja.md) for camera controls and implementation details.
+The GPUI app tracks up to two hands in images, videos, and USB camera streams. Windows inference uses ONNX Runtime with CUDA, DirectML, or CPU. The Rust preprocessing and tracking code is shared with Android. The original ncnn/Vulkan backend remains available for comparison.
 
-## Build and run
+See the [Japanese guide](README_ja.md) for translated instructions.
 
-Install Rust with the x64 MSVC toolchain (tested with Rust 1.96), Visual Studio's **Desktop development with C++** workload, Git, CMake 3.22 or later, and Ninja. Add CMake and Ninja to `PATH`. Video and camera inputs also require an FFmpeg build with DirectShow support on `PATH`; alternatively, set `FAH_FFMPEG` to its executable path. GPU inference requires a Vulkan driver.
+## Install inference runtimes
 
-From the repository root, run:
+Install the [Microsoft Visual C++ x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) and a current GPU driver. The application and build script do not install CUDA, cuDNN, or inference runtimes automatically.
+
+### DirectML and CPU (no CUDA required)
+
+1. Download [Microsoft.ML.OnnxRuntime.DirectML 1.24.4](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML/1.24.4). A `.nupkg` file is a ZIP archive.
+2. Extract `runtimes/win-x64/native/onnxruntime.dll` and `onnxruntime_providers_shared.dll` into `runtimes/directml` beside `fah-windows.exe`.
+3. Download [Microsoft.AI.DirectML 1.15.4](https://www.nuget.org/packages/Microsoft.AI.DirectML/1.15.4).
+4. Extract **`bin/x64-win/DirectML.dll`** into that same directory. Do not use an Xbox DLL.
+
+The CPU option uses the CPU provider in this DirectML runtime package. Neither option requires CUDA.
+
+### CUDA (optional)
+
+1. Install [CUDA Toolkit 13.1](https://developer.nvidia.com/cuda-13-1-0-download-archive) and a compatible NVIDIA driver.
+2. Install [cuDNN 9 for Windows x86-64 and CUDA 13](https://developer.nvidia.com/cudnn-downloads). Select the CUDA 13 build. See the [CUDA provider requirements](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html).
+3. Add the directories containing `cudart64_13.dll`, `cublas64_13.dll`, `cublasLt64_13.dll`, and the cuDNN DLLs to your user `PATH`. CUDA 13.1 usually stores its DLLs in `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1\bin\x64`. For cuDNN, use the directory containing `cudnn64_9.dll` and its companion DLLs.
+4. Download [ONNX Runtime 1.31.1 for Windows x64, CUDA 13](https://github.com/microsoft/onnxruntime/releases/download/v1.31.1/onnxruntime-win-x64-gpu_cuda13-1.31.1.zip).
+5. Copy `onnxruntime.dll`, `onnxruntime_providers_shared.dll`, and `onnxruntime_providers_cuda.dll` from its `lib` directory into `runtimes/cuda` beside the application.
+6. Restart the application and its launching terminal after changing `PATH`.
+
+Keep the CUDA and DirectML runtime DLLs in separate directories. TensorRT is not used or required. CUDA inference disables TF32 to preserve FP32 accuracy.
+
+For custom installations, set `FAH_ORT_DML` and `FAH_ORT_CUDA` to the full paths of the respective `onnxruntime.dll` files. Lookup order is the explicit environment variable, the executable's `runtimes` directory, then the development checkout. An invalid explicit path produces an error.
+
+Development lookup paths:
+
+- `third_party/ort-directml-1.24.4/runtimes/win-x64/native/onnxruntime.dll`
+- `third_party/ort-cuda13-1.31.1/onnxruntime-win-x64-gpu_cuda13-1.31.1/lib/onnxruntime.dll`
+
+## Export models and build
+
+Install Rust x64 MSVC (tested with Rust 1.96), Visual Studio's **Desktop development with C++** workload, Git, CMake 3.22 or later, and Ninja. Put CMake and Ninja on PATH. Video and camera inputs require FFmpeg with DirectShow support on PATH, or an executable path in `FAH_FFMPEG`.
+
+Prepare checkpoints with the [repository setup instructions](../README.md). From the repository root, run:
 
 ```powershell
+.venv/Scripts/python.exe -m pip install -r requirements-onnx.txt
+.venv/Scripts/python.exe tools/export_onnx.py
 .\tools\windows.ps1 build
 .\tools\windows.ps1 run
 ```
 
-Reuse the Android app's exported `models` directory. If it is missing, follow the [model preparation instructions](../README.md) and run `tools/setup.ps1`. Building the Windows app itself does not require the Android SDK. The [model weight license](../licenses/FAH-WEIGHTS.txt) still applies.
+The app needs `models/pose.onnx`, `detector.onnx`, and `uv_grid.f32`. The sample image also needs `sample.png`. Export uses fixed shapes and FP32 weights. The [model license](../licenses/FAH-WEIGHTS.txt) still applies.
 
-The required files are `pose.ncnn.param`, `pose.ncnn.bin`, `detector.ncnn.param`, `detector.ncnn.bin`, and `uv_grid.f32`. The sample image also requires `sample.png`.
+Run `windows/target/release/fah-windows.exe` directly after building. Keep `fah_backend.dll` beside it for the Vulkan backend. No console opens. Use `--models DIRECTORY` to select another model directory. Close the app before rebuilding. The Windows build does not require the Android SDK.
 
-After building, run `windows/target/release/fah-windows.exe` directly. Keep `fah_backend.dll` beside the executable. Use `--models DIRECTORY` to select another model directory. Close the app before rebuilding.
+Vulkan uses the original ncnn model files and camera grid.
 
-## Use a camera
+## Select a backend and input
 
-Select a device from the left panel, then click **カメラ開始** (Start camera). Click **再検索** (Refresh) if you connected the camera after launch. **停止** (Stop) releases the camera. Capture and hand overlays were tested with an HD Pro Webcam C920.
+**自動** (Auto) tries CUDA, DirectML, then CPU. Each candidate must load both models and complete a warm-up inference. This catches cuDNN dependencies loaded only by the first convolution. Failed candidates are recorded in saved JSON under `initialization_warning`.
 
-Use **左右反転** to mirror the camera preview, including its joint overlays. The toggle also works while paused and defaults to OFF. Image/video inputs and saved PNG/JSON results remain unmirrored.
+Explicit **CUDA**, **DirectML**, **CPU**, or **Vulkan** selections report initialization errors without choosing another provider. An inference failure after successful initialization uses the shared pipeline's CPU recovery path; the preview and JSON show CPU. Both GPU providers use device index 0. ONNX Runtime may run unsupported operators on CPU within a GPU session.
 
-Use **画像・動画を開く** to open a file, or **サンプル画像** for the bundled sample image. The adjacent video button requires the source checkout's `third_party/FAH/docs/assets/videos/test_video_selfie.mp4`. **結果を保存** saves the displayed image and a JSON file with the same stem.
+Select a camera, then click **カメラ開始** (Start camera). **再検索** refreshes the device list. **停止** releases the camera. **左右反転** mirrors the camera preview and joints, including while paused. Saved PNG/JSON results and image/video inputs remain unmirrored.
+
+**画像・動画を開く** opens a file. **サンプル画像** uses the sample image. The adjacent video button needs the source checkout's FAH sample video. **結果を保存** saves a PNG with joint overlays and a JSON file.
+
+Video/camera frames fit into 640×480 while preserving aspect ratio. Pending frames are dropped when inference falls behind. Audio is not processed. Inference FPS excludes capture and rendering. Camera intrinsics are estimated from image dimensions.
+
+## Validate the installation
+
+Use `Start-Process -Wait` for CLI checks because this is a Windows GUI executable. Capture stderr to see dependency errors.
 
 ```powershell
-$app = '.\windows\target\release\fah-windows.exe'
-& $app --list-cameras
-& $app --models models --camera 'HD Pro Webcam C920'
-& $app --models models --sample --cpu
-& $app --check models gpu 5
-& $app --models models --sample-video --smoke --frames 30 --output artifacts/windows-video
+$app = (Resolve-Path windows/target/release/fah-windows.exe).Path
+$p = Start-Process $app -ArgumentList '--check models directml 5' -Wait -PassThru -RedirectStandardOutput directml.json -RedirectStandardError directml.log
+$p.ExitCode
+$p = Start-Process $app -ArgumentList '--check models cuda 5' -Wait -PassThru -RedirectStandardOutput cuda.json -RedirectStandardError cuda.log
+$p.ExitCode
+Start-Process $app -ArgumentList '--models models --backend auto --sample-video --smoke --frames 30 --output artifacts/onnx-video' -Wait
 .\tools\windows.ps1 test
 ```
 
-Video and camera frames are fitted into 640×480 while preserving their aspect ratio. The app drops pending frames when inference falls behind. It does not play or record audio. Displayed inference FPS excludes capture and rendering time. Camera intrinsics are estimated from image dimensions.
+`--check` accepts cpu, cuda, directml, or gpu (legacy Vulkan), a run count, and an optional fixture directory. `--smoke` saves results.json and last-frame.png, then exits. Use `--list-cameras` with stdout redirection to list devices.
 
-Windows Vulkan inference retains intermediate tensors to avoid incorrect results observed with buffer reuse on the RTX 5070. This increases memory use. The app explicitly releases Vulkan before unloading its native DLL. Inference uses FP32; CUDA is not included.
+If CUDA reports cudnn64_9.dll missing, install cuDNN and add its DLL directory to PATH. A working nvcc does not establish that cuDNN is available. For DirectML load failures, check the x64 Visual C++ Redistributable and the DirectML package version.
 
-CPU and Vulkan reference checks, four real-image Vulkan fixtures, sample image/video processing, USB camera capture, and GUI controls were verified. See the [validation results](../docs/windows-validation.json).
+## Design and validation status
+
+Rust loads the ONNX Runtime C API through ort-sys. Each runtime owns its API table and native handles; CUDA and DirectML do not share a global API pointer. The inference worker owns sessions exclusively. Switching backends drops sessions before creating replacements. Handles are released before library unload. DirectML uses sequential execution with memory patterns disabled.
+
+DirectML passed the pose reference check and four real-image fixtures on RTX 5070. Pose-only median latency was approximately 4.6 ms, versus approximately 29 ms in the earlier ncnn/Vulkan run. These are separate runs, not a controlled throughput benchmark. CPU checks, sample/video processing, and CUDA-to-DirectML recovery also passed.
+
+CUDA 13.1 and ONNX Runtime 1.31.1 loaded, but inference failed because cuDNN was absent. CUDA accuracy and performance remain unverified until cuDNN is installed. See [validation results](../docs/windows-onnx-validation.json).

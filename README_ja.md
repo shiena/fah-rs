@@ -1,199 +1,184 @@
 # fah-rs
 
-Unity・Godot向けの共通C ABIを追加しました。[ビルド手順・C/C#サンプル・検証範囲](engines/README.md)を参照してください。
+[English](README.md)
 
-Macでは[Windowsと共通のRust／GPUIアプリ](macos/README.md)を使えます。macOS／iOS向けのMetalアダプターを追加しています。[ビルド手順と検証状況](apple/README.md)を参照してください。
+Rustの共通コアとプラットフォーム別の推論エンジンで、FAH-Sの手姿勢推定を実行します。デスクトップGUIにはGPUIを使用します。
+元のモデルは[FAH](https://github.com/noahcao/FAH)、移植元は[fah-metal](https://github.com/LuckyIYI/fah-metal)です。
 
-GUI・共通API・アプリケーション・追跡コア・プラットフォームの5層と映像入力アダプターを分離しています。[構成とUnity・Godot向けの接続境界](docs/architecture.md)を参照してください。
+**モデルの重みは研究・非商用用途に限定されています。** 変換後のモデルにも条件が残ります。取得・配布前に[ライセンスとモデルの利用条件](#ライセンスとモデルの利用条件)を確認します。
 
-Windows版も利用できます。GPUIのGUIで画像・動画・USBカメラを処理します。[ビルドと使い方](windows/README_ja.md)を参照してください。
+## 対応プラットフォーム
 
-Windows 11版はCUDA・DirectML・CPUに対応します。[ランタイムの導入手順](windows/README_ja.md#ランタイムを導入する)に従い、`tools/export_onnx.py`でモデルを変換します。CUDAを使う場合はCUDA 13.xとCUDA 13用cuDNN 9が必要です。アプリによる自動導入は行いません。
+| プラットフォーム | アプリ・組み込み方法 | 推論エンジン | 検証範囲 |
+|---|---|---|---|
+| Windows 11 x64 | GPUIアプリ、C ABI | ONNX Runtime CUDA／DirectML／CPU、ncnn Vulkan | 画像・動画・USBカメラ。CUDA推論はcuDNN不足により未検証 |
+| Android arm64、API 26以降 | Androidアプリ、C ABI | ncnn Vulkan／CPU | 実機の画像・動画・カメラ |
+| macOS 15以降、Apple silicon | GPUIアプリ、C ABI | Metal姿勢推定＋Core ML検出器 | Apple M3の画像・動画・カメラ |
+| iOS 18以降、arm64 | ネイティブライブラリ、C ABI確認アプリ | Metal姿勢推定＋Core ML検出器 | iPhone 15 Proのサンプル画像。カメラは未検証 |
+| Linux x86_64 | C ABI、コマンドラインのサンプル | ncnn Vulkan、LiteRT CPU姿勢推定＋ncnn CPU検出器 | Steam Deckのサンプル動画 |
 
-FAH-Sの手姿勢推定を、AndroidのVulkan Computeで実行する検証用アプリです。
-対象端末は、接続して検証したSony SO-51Aです。
+自動選択では、WindowsはCUDA→DirectML→CPUの順で初期化します。CUDAは必要なライブラリがある場合だけ有効になります。
+AndroidとLinuxはVulkanを優先し、失敗時にCPUを使用します。AppleにはCPUフォールバックがありません。
+Linux用のGPUIアプリとカメラ入力は未実装です。iOSの確認アプリはGPUIを使用しません。
 
-移植元は[fah-metal](https://github.com/LuckyIYI/fah-metal)です。
-元のモデルとPyTorch実装は[FAH](https://github.com/noahcao/FAH)を使用しています。
+## 機能と制限
 
-**リアルタイム速度には達していません。** 現段階は精度と実機動作を確認する移植版です。
-Metal版の115〜234FPSを再現したものではありません。
+- 最大2手について、各21関節の2D・3D座標を出力します。
+- 切り出し、座標復元、追跡を共有し、10処理フレームごとに再検出します。
+- GUI、共通API、アプリケーション、追跡コア、プラットフォームの5層と、映像入力アダプターを分離しています。
+- Unity・Godot向けにGUI不要のC ABIとC/C#サンプルを提供します。エンジン固有のプラグインパッケージは未実装です。
 
-## 実装範囲
+3D座標はカメラ座標系のメートル単位です。内部パラメーターは画像サイズから推定し、校正値は使用しません。
+メッシュ、MANO回転、接触推定、動画補正、左右の再推定、境界での再切り出し、平滑化は未実装です。
+性能は端末と推論エンジンによって異なります。移植元の全パイプラインや公称FPSを再現する構成ではありません。
 
-- FAH-Sの姿勢推定とFAHの手検出モデルを実行します。
-- 最大2手の21関節を2D・3D座標として出力します。
-- 前フレームの推定領域を使い、10処理フレームごとに再検出します。
-- カメラ画面とサンプル画像に関節を重ねて表示します。
-- メッシュ、MANO回転、接触推定、動画補正モデルは実装していません。
+## モデルを準備する
 
-推論基盤はncnnです。行列積、集約演算、GELU、LayerNormには独自のVulkanシェーダーを追加しています。
-Metalコードを機械変換した構成ではありません。
-残差計算を含む姿勢推定はFP32を使います。
-FP16経路は精度比較を通過していないため、アプリでは使用しません。
+検証済みのチェックポイント準備環境はWindows、PowerShell、Git、Python 3.12です。
+リポジトリのルートで実行します。
 
-JNI、画像の切り出し、座標復元、追跡、検証コマンドはRustで実装しています。
-ncnnのモデル実行と独自VulkanレイヤーはC++に残し、C ABIで接続しています。
-3D座標はカメラ座標系のメートル単位です。
-カメラ内部パラメーターは画像サイズから推定します。
-実機カメラの校正値を使った精度評価は未実施です。
+```powershell
+.\tools\setup.ps1
+```
 
-手の左右を再推定する処理、境界での再切り出し、平滑化は未実装です。
-手の姿勢ネットワークの数値一致と、追跡全体の一致は別の検証です。
-FAHの追跡パイプライン全体との完全な一致は保証していません。
+`.venv`を作成し、固定したFAHソースとハッシュ検証付きの重みを取得します。ncnnモデルと検証用データも生成します。
+Android用ncnnライブラリの取得と`local.properties`の作成も行います。Android SDK自体は導入しません。WindowsアプリのビルドにAndroid SDKは不要です。
 
-## 動作環境
-
-| 項目 | 検証環境 |
+| 対象 | 追加のモデル準備 |
 |---|---|
-| 端末 | Sony SO-51A |
-| SoC・GPU | SM8250・Adreno 650 |
-| Android | 12、API 31（端末のプロパティ値） |
-| ABI | arm64-v8a |
-| Vulkan | 1.1.128、FP16対応、Cooperative Matrix非対応 |
-| ホスト | Windows、PowerShell、Python 3.12、JDK 17 |
-| ビルド | Gradle 8.14.5、AGP 8.13.2、NDK 30.0.16248370、CMake 3.22.1 |
+| Windows ONNX Runtime | `tools/export_onnx.py`。[Windows手順](windows/README_ja.md)を参照 |
+| Android／Linux Vulkan | `tools/setup.ps1`が生成するncnnファイルを使用 |
+| macOS／iOS | `tools/export_apple.py`で出力後、Macで変換。[Apple手順](apple/README.md#モデルを準備する)を参照 |
+| Linux CPU | 専用環境で`tools/export_litert.py`を実行。[LiteRT変換手順](docs/litert-performance.md#wslで変換する)を参照 |
 
-Android SDKには`platforms;android-36`も必要です。
-他のAndroid端末では検証していません。
+生成したモデルを実行先へコピーします。各形式には互換性がありません。
+この構成のエクスポーターではMANOやSAM 3D Bodyの追加取得は不要です。ただし、FAHの重みの制限は残ります。
+`models/`と`third_party/`はGitの管理対象外です。
 
-## 準備する
+## ビルドして起動する
 
-Rust 1.87以降とCargoが必要です。Cargoを`PATH`に登録し、Androidターゲットを追加します。
+コマンドはリポジトリのルートで実行します。ランタイム、モデルの配置、検証の詳細は各ガイドを参照します。
+Cargoの既定ターゲットをビルドするだけでは、ネイティブ依存関係やモデルを準備できません。
+
+### Windows
+
+Rust x64 MSVC、Visual StudioのC++デスクトップ開発、CMake 3.22以降、Ninjaを導入します。
+[ONNX RuntimeのDLL](windows/README_ja.md#ランタイムを導入する)を配置します。CUDA使用時はCUDA 13.xとCUDA 13用cuDNN 9も必要です。
+動画・カメラ入力にはDirectShow対応のFFmpegが必要です。
+
+```powershell
+.venv/Scripts/python.exe -m pip install -r requirements-onnx.txt
+.venv/Scripts/python.exe tools/export_onnx.py
+.\tools\windows.ps1 build
+.\tools\windows.ps1 run
+```
+
+実行ファイルは`windows/target/release/fah-windows.exe`です。[Windowsガイド](windows/README_ja.md)を参照してください。
+
+### Android
+
+JDK 17、Rust 1.87以降、Android SDK platform 36、NDK 30.0.16248370、CMake 3.22.1を導入します。
+端末のUSBデバッグを有効にして接続を許可します。
 
 ```powershell
 rustup target add aarch64-linux-android
-```
-
-SDKの既定パスは`$env:LOCALAPPDATA\Android\Sdk`です。
-初回はモデルと依存ライブラリをダウンロードします。
-FAHの重みには研究・非商用の利用条件があります。
-詳細は[重みのライセンス](licenses/FAH-WEIGHTS.txt)を参照します。
-この構成ではMANOやSAM 3D Bodyの追加モデルは不要です。
-
-1. Android SDKの必要なパッケージをインストールします。
-
-   ```powershell
-   & "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" 'platforms;android-36' 'ndk;30.0.16248370' 'cmake;3.22.1'
-   ```
-
-2. モデルを取得し、変換します。
-
-   ```powershell
-   .\tools\setup.ps1
-   ```
-
-3. USBデバッグを許可した端末へアプリとモデルを配置します。
-
-   ```powershell
-   .\tools\device.ps1 -Action install
-   ```
-
-複数の端末を接続している場合は、`-Serial`で対象を指定します。
-SDKの場所が異なる場合は、両スクリプトに`-Sdk`を指定します。
-
-## 操作する
-
-端末のロックを解除して、アプリの［カメラ］をタップします。
-［サンプル検証］は公開サンプル画像で推論します。
-［再検出］は追跡領域をリセットします。
-［CPU/GPU］は実行方式を切り替えます。
-この端末ではCPUの方が高速です。既定値はVulkanです。
-GPU推論がエラーになった場合はCPUで再試行し、画面に「CPU（GPUエラー後）」と表示します。
-以後はCPUで処理し、［CPU/GPU］で実行方式を選び直せます。
-
-SO-51Aの古いAdrenoドライバーでは、カメラ描画と長いGPU処理の同時実行でエラーが発生しました。
-対策として、推論中はカメラプレビューを停止します。
-取得したフレームを表示したまま推論し、完了後にプレビューを再開します。
-画面が連続した動画のように更新されないのは、この動作によるものです。
-
-画面に表示するFPSは、ネイティブ処理時間の逆数です。
-カメラの取得、プレビューの再開、画面描画の時間は含みません。
-
-モデルは次の端末内フォルダーに配置します。
-
-```text
-/sdcard/Android/data/dev.fah.android/files/models/
-```
-
-その親フォルダーには`last-result.json`が保存されます。
-サンプル検証時は`sample-result.png`も保存されます。
-APKには学習済みモデルを含めていません。
-APKだけを別端末へコピーしても推論は動作しません。
-
-## 検証する
-
-```powershell
+.\tools\device.ps1 -Action install
 .\tools\device.ps1 -Action check
 ```
 
-このコマンドはカメラアプリを停止してから実行します。
-検証が完了したら、次のコマンドでカメラ画面を再開します。
+`install`はAPKをビルドし、モデルを別途転送します。APKだけでは推論できません。
+[Androidの準備・操作・動画検証ガイド](app/README_ja.md)を参照してください。
+LiteRTの性能検証はAndroidアプリには組み込んでいません。
 
-```powershell
-.\tools\device.ps1 -Action camera
+### macOS
+
+Apple silicon Mac、macOS 15以降、Xcode 26.2以降、Rust、Python 3を使用します。
+[Apple用モデル](apple/README.md#モデルを準備する)を準備し、Mac上で実行します。
+
+```sh
+xcodebuild -downloadComponent MetalToolchain
+python3 macos/build.py --models models/apple
 ```
 
-準備時と実機検証時の検証内容は次のとおりです。最初の2項目は`setup.ps1`で実行します。
+`macos/build/FAH.app`を生成して起動します。`--camera`を追加するとカメラを開始します。
+[GPUIアプリのガイド](macos/README.md)を参照してください。
 
-- FAHの元のforward処理と、変換用forward処理を比較します。
-- PCのncnn出力とPyTorchの基準値を比較します。
-- AndroidのCPU・Vulkan出力とPyTorchの基準値を比較します。
-- 実画像由来の4種類の切り出し画像を比較します。
-- 同じサンプル画像を12回処理し、追跡と再検出を確認します。
+### iOS
 
-2D座標の最大差が入力画像上で0.5ピクセル未満、3D座標の最大差が1mm未満なら合格です。
-いずれも実データの正解ラベルに対する推定精度ではなく、移植による差の検査です。
-動画全体に対する追跡精度評価は含みません。
+Xcode 26.2以降、Rust、Python 3を導入したMacを使用します。先にApple用モデルを準備します。
 
-測定値は`artifacts/validation.json`、実行ログは`artifacts/`に保存します。
-モデルの読み込みと初回2回の推論は、単体ベンチマークから除外します。
-詳しい初回検証結果は[検証記録](docs/validation.md)を参照します。
-
-### サンプル動画を検証する
-
-FFmpegをインストールして`PATH`に登録し、次のコマンドを実行します。
-
-```powershell
-.\tools\device.ps1 -Action video
+```sh
+python3 engines/ios/build.py
 ```
 
-公開セルフィー動画の5秒地点から、5FPSで30枚の異なるフレームを抽出します。
-元画像の領域（640×426）を切り出し、Androidで順番に推論します。
-関節座標の有限性、追跡、定期的な再検出、CPU切り替えの有無を検査します。
-結果は`artifacts/video-validation.json`に保存します。
-これは動作確認であり、正解ラベルに対する精度評価ではありません。
+`engines/build/ios/libfah_engine.a`を生成します。ホストにはSwiftアダプターとシェーダーリソースも必要です。
+署名付きの実機確認アプリをビルドする場合は`--team YOUR_APPLE_TEAM_ID`を追加します。
+[iOSの実機確認手順](engines/README.md#iosでビルド検証する)と[Swiftパッケージのガイド](apple/README.md)を参照してください。
 
-### Rustのコードを検証する
+### Linux
 
-```powershell
+LinuxまたはWSLにRust、Python 3、GCCまたはClang、CMake 3.22以降、Ninja、Vulkan開発ヘッダーを導入します。
+LiteRT 2.3.0はビルド用Python環境の`ai-edge-litert==2.3.0`、またはライブラリのパス指定で準備します。
+
+```sh
+git clone --branch 20261020 --depth 1 --recurse-submodules --shallow-submodules https://github.com/Tencent/ncnn.git third_party/ncnn-src
+python3 engines/build.py --platform linux --litert-library /absolute/path/libLiteRt.so
+```
+
+固定版のncnnを取得済みならcloneを省略します。Pythonパッケージを導入済みなら`--litert-library`を省略できます。
+`engines/build/linux/`に`libfah_engine.so`、`libfah_backend.so`、`libLiteRt.so`とLiteRTのライセンスを配置します。
+実行時にPythonは不要です。CPU推論には`models/litert/pose.tflite`も必要です。
+[Linuxのビルド・動画検証ガイド](engines/README.md#linuxでビルドする)を参照してください。
+
+## 組み込みと検証
+
+[C ABIガイド](engines/README.md)では、配布物、ライフサイクル、座標系、ホストの責務を説明しています。
+ホストはRGBA8画像を渡し、映像入力、テクスチャの読み出し、スレッドを管理します。
+[Cサンプル](engines/examples/check.c)と[C#ラッパー](engines/examples/FahSession.cs)を参照してください。
+Unity Editor、IL2CPP、Godotプラグインへの組み込みは未検証です。
+
+```sh
 cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --locked
-cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
 ```
 
-GradleはCMakeからRustの静的ライブラリをビルドします。依存関係はCargo.lockで固定しています。
-アプリと`fah-check`は、共通のRustパイプラインとncnnアダプターを使います。
-
-Rust移植後の動画・APK検証結果は[検証データ](docs/rust-validation.json)を参照します。
+このコマンドはGUIなしでRust共通層をテストします。ネイティブ推論の確認方法は各プラットフォームのガイドを参照します。
+検証記録は[Android](docs/rust-validation.json)、[Windows](docs/windows-onnx-validation.json)、[macOS](docs/macos-gpui-validation.json)、[Linux LiteRT](engines/linux/litert-validation.json)にあります。
+数値一致と動画の動作確認は、正解ラベルに対する推定精度の評価ではありません。
 
 ## ファイル構成
 
-| パス | 内容 |
+| パス | 役割 |
 |---|---|
-| `tools/export.py` | FAHの必要なモジュールだけを読み込み、ncnnへ変換 |
-| `tools/make_fixtures.py` | 比較用の入力とPyTorchの基準値を生成 |
-| `app/src/main/rust/src/android.rs` | JNI入口とビットマップのロック管理 |
-| `crates/fah-ncnn/src/runtime.rs` | ネイティブハンドルの所有とテンソルのコピー |
-| `backends/ncnn/cpp/bridge.cpp` | ncnnのC ABIアダプターとC++例外の処理 |
-| `backends/ncnn/cpp/runtime.cpp` | ncnnの読み込み、推論、GPU処理の分割 |
-| `backends/ncnn/cpp/vulkan_ops.cpp` | 独自のVulkan行列積・集約・GELU・LayerNorm |
-| `crates/fah-core/src/pipeline.rs` | 検出、切り出し、カメラ条件、座標復元、追跡 |
-| `app/src/main/java/dev/fah/android/MainActivity.java` | カメラと関節表示 |
-| `crates/fah-ncnn/src/check.rs` | 実機の比較・計測用コマンド |
+| `crates/fah-gui/` | Windows・macOS共通のGPUI画面 |
+| `crates/fah-api/` | 画像、推論、追跡の共通契約 |
+| `crates/fah-application/` | セッションとデスクトップ用ワーカー制御 |
+| `crates/fah-core/` | 前処理、後処理、追跡 |
+| `crates/fah-input/` | 共通の静止画入力アダプター |
+| `crates/fah-ncnn/`、`backends/ncnn/cpp/` | RustのncnnアダプターとC++／Vulkanランタイム |
+| `crates/fah-litert/`、`crates/fah-linux-platform/` | LiteRT C APIラッパーとLinuxの推論方式選択 |
+| `crates/fah-apple-platform/`、`apple/` | RustのAppleアダプター、Swift／Metal／Core ML実装、移植元ソース |
+| `crates/fah-ffi/`、`engines/` | C ABI、ヘッダー、ホスト用サンプル、配布物の生成 |
+| `windows/` | Windowsの起動処理、ONNX推論、OS機能、ネイティブビルド |
+| `macos/` | macOSのGPUI起動処理とアプリバンドル生成 |
+| `app/` | Android UI、Rust JNIブリッジ、Gradle／CMakeビルド |
+| `tools/`、`docs/` | モデル変換、セットアップ、設計、検証記録 |
+| `licenses/`、`NOTICE` | 依存コードの告知とモデルの利用条件 |
+| `models/`、`third_party/`、`artifacts/` | ローカルのモデル、依存ライブラリ、生成物。Git管理対象外 |
 
-## ライセンス
+依存方向と映像入力の所有権は[アーキテクチャガイド](docs/architecture.md)を参照してください。
 
-本プロジェクトのコードはApache-2.0です。
-FAH、fah-metal、MLX、ncnnの帰属情報は[NOTICE](NOTICE)と`licenses/`に記載しています。
-モデルと変換済み重みはFAHの重みライセンスに従います。
-`models/`と`third_party/`はGitの管理対象から除外しています。
+## ライセンスとモデルの利用条件
+
+プロジェクトのコードは[Apache-2.0](LICENSE)です。依存コードには各ライセンスが適用されます。[NOTICE](NOTICE)と[licenses](licenses/)を参照してください。
+**モデルの重みがApache-2.0になるわけではありません。**
+
+[FAHの重みライセンス](licenses/FAH-WEIGHTS.txt)は、姿勢モデル、検出器、変換後のモデルに適用されます。SAM／DINOv3の継承条件も含みます。
+ncnn、ONNX、Core ML、Metal、LiteRTへ変換しても研究・非商用の制限は残ります。
+再配布時は重みのライセンスを同梱します。検出器はFAHとUltralytics YOLOv8のクレジットが必要で、適用されるAGPL-3.0の義務にも言及されています。
+
+2026年11月10日の確認では、同梱した重みの利用条件は上流と一致しています。
+配布前に[上流の重みの利用条件](https://github.com/noahcao/FAH/blob/main/WEIGHTS_LICENSE)を確認します。
+このリポジトリのApacheライセンスを根拠に、商用ゲームやプラグインで現在の重みを使用することはできません。
+今回の確認は、個別アプリのAGPL適合性や第三者の商用利用権を保証するものではありません。
+ONNX Runtime、CUDA／cuDNN、FFmpeg、ncnn、LiteRTの配布条件も別途適用されます。実際に同梱するバイナリーの告知を保持します。
+モデルの形式変換や別配布によって、利用制限がなくなることはありません。

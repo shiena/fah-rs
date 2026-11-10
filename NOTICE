@@ -1,11 +1,11 @@
-fah-android: FAH-S hand pose estimation on Android with Vulkan
+fah-rs: Cross-platform FAH-S hand pose estimation
 
-This Android implementation derives its network export and crop/decode formulas from
+This implementation derives its network export and crop/decode formulas from
 FAH and fah-metal. The Vulkan GELU shader adapts the MLX erf approximation carried by
 fah-metal. Original notices are retained below and in licenses/.
 ncnn is Copyright (C) 2017 Tencent and uses BSD-3-Clause; see licenses/ncnn.txt.
 FAH weights are downloaded separately for local use; see licenses/FAH-WEIGHTS.txt.
-The Android port does not include MANO fitting or MANO data.
+This port does not include MANO fitting or MANO data.
 
 Original fah-metal notice:
 fah-metal: FAH-S hand pose estimation on Apple silicon with Metal

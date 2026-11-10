@@ -55,7 +55,7 @@ DLLの配置先は環境変数`FAH_ORT_CUDA`と`FAH_ORT_DML`でも指定でき�
 .\tools\windows.ps1 run
 ```
 
-モデルは既存の`models`フォルダーを使用します。未取得の場合は、[共通の準備手順](../README_ja.md#準備する)の`tools/setup.ps1`で変換してください。Windowsアプリ自体のビルドにAndroid SDKは不要です。モデルの利用条件は[重みのライセンス](../licenses/FAH-WEIGHTS.txt)を参照してください。
+モデルは既存の`models`フォルダーを使用します。未取得の場合は、[共通の準備手順](../README_ja.md#モデルを準備する)の`tools/setup.ps1`で変換してください。Windowsアプリ自体のビルドにAndroid SDKは不要です。モデルの利用条件は[重みのライセンス](../licenses/FAH-WEIGHTS.txt)を参照してください。
 
 ONNX推論に必要なモデルは`pose.onnx`、`detector.onnx`、`uv_grid.f32`です。上記の変換には共通の準備手順で取得する`model.pt`と`detector.pt`が必要です。Vulkanでは従来のncnnモデルを使用します。サンプル画像には`sample.png`も必要です。
 
@@ -93,7 +93,7 @@ GUI実行ファイルの終了を待つため、検証には`Start-Process -Wait
 
 ## 実装上の制限と検証
 
-コードの配置と所有権は[アーキテクチャ](../docs/architecture.md)に記載しています。同期セッションはホストからフレームを受け取り、GUI・カメラ・デスクトップ用ワーカーなしで動作します。Windowsライブラリは`--no-default-features`でGPUIを除外できます。Unity・Godot向けの公開ABIは未実装です。
+コードの配置と所有権は[アーキテクチャ](../docs/architecture.md)に記載しています。同期セッションはホストからフレームを受け取り、GUI・カメラ・デスクトップ用ワーカーなしで動作します。Windowsライブラリは`--no-default-features`でGPUIを除外できます。[公開C ABIとC/C#サンプル](../engines/README.md)を利用できます。Unity・Godot固有のプラグインパッケージは未実装です。
 
 - 動画・カメラは縦横比を保って640×480に収めます。処理が追いつかないフレームは破棄し、最新フレームを処理します。音声の再生・録音は行いません。
 - 「推論FPS」は推論時間の逆数です。撮影・描画を含む実効FPSとは異なります。「取得→結果」はFFmpegからのフレーム受信後を計測し、カメラ内部の遅延は含みません。

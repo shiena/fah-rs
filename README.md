@@ -1,205 +1,184 @@
 # fah-rs
 
-A GUI-free C ABI supports engine integration on Windows, Android, macOS, iOS, and Linux. See the [build guide, C/C# examples, and validation scope](engines/README.md) (Japanese).
-
-An Apple adapter connects the original Metal networks to the shared Rust tracking core. See the [macOS/iOS build guide and validation status](apple/README.md) (Japanese). Camera inference is verified on an Apple M3 Mac. iOS device and Simulator builds pass; Sample-image inference through the shared C ABI is verified on an iPhone 15 Pro.
-
-The shared code is organized into GUI, API, application, tracking core, and platform layers, with separate frame-input adapters. See the [architecture and engine-integration boundaries](docs/architecture.md) (Japanese). The Windows runtime library can be built without GPUI using `--no-default-features`.
-
-A Windows app with a GPUI interface supports images, videos, and USB cameras. See the [Windows build and usage guide](windows/README.md).
-
-Windows 11 inference supports CUDA, DirectML (no CUDA required), and CPU. Follow the [runtime installation steps](windows/README.md#install-inference-runtimes), then export the ONNX models with `tools/export_onnx.py`. CUDA requires CUDA 13.x and the CUDA 13 build of cuDNN 9. The app does not install these dependencies automatically.
-
 [日本語](README_ja.md)
 
-An experimental Android app that runs FAH-S hand pose estimation with Vulkan Compute.
-The tested device is a Sony SO-51A.
+Cross-platform FAH-S hand tracking with a shared Rust core, native inference backends, and GPUI desktop apps.
+This project builds on [FAH](https://github.com/noahcao/FAH) and [fah-metal](https://github.com/LuckyIYI/fah-metal).
 
-This project is ported from [fah-metal](https://github.com/LuckyIYI/fah-metal).
-It uses the original models and PyTorch implementation from [FAH](https://github.com/noahcao/FAH).
+**Model weights are restricted to research and noncommercial use.** Converted models retain these restrictions. See [License and model terms](#license-and-model-terms).
 
-**This port doesn't achieve real-time performance.** Its current purpose is to validate numerical accuracy and operation on an Android device.
-It doesn't reproduce the Metal version's reported 115–234 FPS.
+## Supported platforms
 
-## Features and limitations
+| Platform | App or integration | Inference | Validation scope |
+|---|---|---|---|
+| Windows 11 x64 | GPUI app; C ABI | ONNX Runtime CUDA / DirectML / CPU; ncnn Vulkan | Images, videos, USB cameras; CUDA inference unverified because cuDNN was missing |
+| Android arm64, API 26+ | Android app; C ABI | ncnn Vulkan / CPU | Device image, video, and camera checks |
+| macOS 15+, Apple silicon | GPUI app; C ABI | Metal pose + Core ML detector | Apple M3 image, video, and camera checks |
+| iOS 18+, arm64 | Native library; C ABI validation app | Metal pose + Core ML detector | iPhone 15 Pro sample-image inference; camera unverified |
+| Linux x86_64 | C ABI; command-line example | ncnn Vulkan; LiteRT CPU pose + ncnn CPU detector | Steam Deck sample-video inference |
 
-- Runs the FAH-S pose estimator and FAH hand detector.
-- Outputs 21 joints per hand in 2D and 3D, for up to two hands.
-- Tracks regions from the previous frame and runs detection again every 10 processed frames.
-- Overlays joints on the camera preview and a sample image.
-- Doesn't implement meshes, MANO rotations, contact estimation, or the video correction model.
+Windows Auto tries CUDA, DirectML, then CPU. CUDA is enabled only when its required libraries are present.
+Android and Linux Auto prefer Vulkan, then CPU. Apple has no CPU fallback.
+Linux has no GPUI app or camera adapter. The iOS validation app isn't a GPUI app.
 
-Inference uses ncnn, with custom Vulkan shaders for matrix multiplication, reduction, GELU, and LayerNorm.
-The implementation isn't an automatic translation of Metal code.
-Pose estimation, including residual calculations, uses FP32.
-The app doesn't use FP16 because that path failed the numerical accuracy checks.
+## Features and limits
 
-Rust handles JNI, image cropping, coordinate restoration, tracking, and the validation command.
-A C ABI adapter retains ncnn model execution and custom Vulkan layers in C++.
-3D coordinates use the camera coordinate system, in meters.
-Camera intrinsics are estimated from the image dimensions.
-Accuracy with calibrated device camera intrinsics hasn't been evaluated.
+- Returns 21 joints per hand in 2D and 3D, for up to two hands.
+- Shares cropping, coordinate restoration, tracking, and redetection every 10 processed frames.
+- Separates GUI, API, application, tracking core, and platform layers, with independent frame-input adapters.
+- Provides a GUI-free C ABI and C/C# examples for Unity or Godot hosts. Engine-specific plugin packages are not implemented.
 
-Handedness reassessment, boundary recropping, and smoothing aren't implemented.
-Numerical agreement of the pose network is separate from agreement of the complete tracking pipeline.
-This port doesn't guarantee identical behavior to the full FAH tracking pipeline.
+3D coordinates use camera space in meters. Intrinsics are estimated from image dimensions, not calibrated camera data.
+Meshes, MANO rotations, contact estimation, video correction, handedness reassessment, boundary recropping, and smoothing are not implemented.
+Performance depends on the device and backend. This port doesn't reproduce the complete upstream pipeline or its reported FPS.
 
-## Requirements
+## Prepare models
 
-| Item | Tested environment |
+The tested checkpoint preparation workflow uses Windows, PowerShell, Git, and Python 3.12.
+From the repository root, run:
+
+```powershell
+.\tools\setup.ps1
+```
+
+This creates `.venv`, checks out pinned FAH source, downloads checksum-verified weights, and exports ncnn models and fixtures.
+It also downloads Android ncnn libraries and writes `local.properties`. It doesn't install the Android SDK; Windows desktop builds don't require that SDK.
+
+| Target | Additional model preparation |
 |---|---|
-| Device | Sony SO-51A |
-| SoC and GPU | SM8250 and Adreno 650 |
-| Android | 12, API 31, as reported by device properties |
-| ABI | arm64-v8a |
-| Vulkan | 1.1.128; FP16 supported; Cooperative Matrix unsupported |
-| Host | Windows, PowerShell, Python 3.12, and JDK 17 |
-| Build tools | Gradle 8.14.5, AGP 8.13.2, NDK 30.0.16248370, and CMake 3.22.1 |
+| Windows ONNX Runtime | `tools/export_onnx.py`; see the [Windows guide](windows/README.md) |
+| Android / Linux Vulkan | ncnn files from `tools/setup.ps1` |
+| macOS / iOS | `tools/export_apple.py`, then conversion on a Mac; see the [Apple guide](apple/README.md#モデルを準備する) (Japanese) |
+| Linux CPU | `tools/export_litert.py` in a dedicated environment; see the [LiteRT guide](docs/litert-performance.md#wslで変換する) (Japanese) |
 
-The Android SDK also requires `platforms;android-36`.
-Other Android devices haven't been tested.
+Copy prepared models to the target platform. These formats aren't interchangeable.
+The configured exporters don't require an additional MANO or SAM 3D Body download. FAH weight restrictions still apply.
+`models/` and `third_party/` are excluded from Git.
 
-## Set up the app
+## Build and run
 
-Install Rust 1.87 or later and Cargo. Add Cargo to `PATH`, then install the Android target.
+Run commands from the repository root. Platform guides contain runtime installation, model layout, and validation details.
+Building the default Cargo target alone doesn't prepare native dependencies or models.
+
+### Windows
+
+Install Rust x64 MSVC, Visual Studio's C++ desktop workload, CMake 3.22+, and Ninja.
+Install the [ONNX Runtime DLLs](windows/README.md#install-inference-runtimes). CUDA additionally needs CUDA 13.x and cuDNN 9 for CUDA 13.
+Video and camera input require FFmpeg with DirectShow support.
+
+```powershell
+.venv/Scripts/python.exe -m pip install -r requirements-onnx.txt
+.venv/Scripts/python.exe tools/export_onnx.py
+.\tools\windows.ps1 build
+.\tools\windows.ps1 run
+```
+
+Output: `windows/target/release/fah-windows.exe`. See the [Windows guide](windows/README.md).
+
+### Android
+
+Install JDK 17, Rust 1.87+, Android SDK platform 36, NDK 30.0.16248370, and CMake 3.22.1.
+Enable USB debugging and authorize the device.
 
 ```powershell
 rustup target add aarch64-linux-android
-```
-
-The default SDK path is `$env:LOCALAPPDATA\Android\Sdk`.
-Initial setup downloads the models and dependencies.
-FAH weights have research and noncommercial use restrictions. See the [weights license](licenses/FAH-WEIGHTS.txt) for the full terms.
-This configuration doesn't require additional MANO or SAM 3D Body models.
-
-Run these commands from the repository root in PowerShell.
-
-1. Install the required Android SDK packages.
-
-   ```powershell
-   & "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" 'platforms;android-36' 'ndk;30.0.16248370' 'cmake;3.22.1'
-   ```
-
-2. Download and convert the models.
-
-   ```powershell
-   .\tools\setup.ps1
-   ```
-
-3. Install the app and models on a connected device with USB debugging authorized.
-
-   ```powershell
-   .\tools\device.ps1 -Action install
-   ```
-
-If multiple devices are connected, select the target with `-Serial`.
-If your SDK is in a different location, pass `-Sdk` to both scripts.
-
-## Use the app
-
-The app's controls are in Japanese. Unlock the device and tap **カメラ** (Camera).
-
-| Control | Action |
-|---|---|
-| **カメラ** (Camera) | Open the camera preview and run inference. |
-| **サンプル検証** (Sample test) | Run inference on the published sample image. |
-| **再検出** (Redetect) | Reset the tracked regions. |
-| **CPU/GPU** | Switch the inference backend. |
-
-CPU inference is faster on this device. The default backend is Vulkan.
-If GPU inference fails, the app retries on the CPU and displays **CPU（GPUエラー後）** (CPU after a GPU error).
-Subsequent frames use the CPU. Use **CPU/GPU** to select the backend again.
-
-The SO-51A's older Adreno driver produced errors when camera rendering overlapped with long GPU operations.
-During Vulkan inference, the app pauses the camera preview and keeps the captured frame visible.
-It resumes the preview after inference completes. This pause prevents continuous video updates.
-
-The displayed FPS is the reciprocal of the native processing time.
-It excludes camera capture, preview restart, and screen rendering.
-
-The models are stored in this directory on the device:
-
-```text
-/sdcard/Android/data/dev.fah.android/files/models/
-```
-
-The parent directory contains `last-result.json`.
-Sample tests also save `sample-result.png` there.
-The APK doesn't include model weights. Copying only the APK to another device isn't enough to run inference.
-
-## Run validation
-
-```powershell
+.\tools\device.ps1 -Action install
 .\tools\device.ps1 -Action check
 ```
 
-This command stops the camera app before running validation.
-After validation, reopen the camera screen:
+The install command builds the APK and transfers models separately. The APK alone isn't sufficient.
+See the [Android setup, controls, and video validation guide](app/README.md).
+The LiteRT benchmark is not integrated into the Android app.
 
-```powershell
-.\tools\device.ps1 -Action camera
+### macOS
+
+Use an Apple silicon Mac with macOS 15+, Xcode 26.2+, Rust, and Python 3.
+Prepare [Apple models](apple/README.md#モデルを準備する), then run on the Mac:
+
+```sh
+xcodebuild -downloadComponent MetalToolchain
+python3 macos/build.py --models models/apple
 ```
 
-Setup and device validation perform the following checks. `setup.ps1` runs the first two checks.
+This builds and launches `macos/build/FAH.app`. Add `--camera` to start capture.
+See the [GPUI app guide](macos/README.md) (Japanese).
 
-- Compare FAH's original forward pass with the rewritten forward pass used for conversion.
-- Compare host ncnn outputs with PyTorch reference outputs.
-- Compare Android CPU and Vulkan outputs with PyTorch reference outputs.
-- Compare outputs for four crops derived from a real image.
-- Process the same sample image 12 times to check tracking state and repeated detection.
+### iOS
 
-The coordinate checks pass when the maximum 2D difference is below 0.5 pixels and the maximum 3D difference is below 1 mm.
-The 2D threshold uses input image coordinates.
-These checks measure differences introduced by the port, not estimation accuracy against ground-truth labels.
-They don't evaluate tracking accuracy across a video.
+Use a Mac with Xcode 26.2+, Rust, and Python 3. Prepare the Apple models first.
 
-Measurements are saved to `artifacts/validation.json`, and logs are saved to `artifacts/`.
-The standalone model benchmarks exclude model loading and the first two inference runs.
-For the initial device test results, see the [validation report (Japanese)](docs/validation.md).
-
-### Validate a sample video
-
-Install FFmpeg and add it to `PATH`, then run:
-
-```powershell
-.\tools\device.ps1 -Action video
+```sh
+python3 engines/ios/build.py
 ```
 
-The command extracts 30 distinct frames at 5 FPS from the published selfie video, starting at 5 seconds.
-It uses the source-image panel (640 × 426) and runs the frames sequentially on Android.
-It checks finite joint coordinates, tracking, periodic detection, and absence of CPU fallback.
-Results are saved to `artifacts/video-validation.json`. This is a smoke test, not a ground-truth accuracy evaluation.
+Output: `engines/build/ios/libfah_engine.a`. Hosts also need the Swift adapter and shader resources.
+Add `--team YOUR_APPLE_TEAM_ID` to build the signed device validation app.
+See the [iOS device guide](engines/README.md#iosでビルド検証する) and [Swift package guide](apple/README.md) (Japanese).
 
-### Test the Rust code
+### Linux
 
-```powershell
+Use Linux or WSL with Rust, Python 3, GCC or Clang, CMake 3.22+, Ninja, and Vulkan development headers.
+Provide LiteRT 2.3.0 through the build Python environment (`ai-edge-litert==2.3.0`) or an explicit library path.
+
+```sh
+git clone --branch 20261020 --depth 1 --recurse-submodules --shallow-submodules https://github.com/Tencent/ncnn.git third_party/ncnn-src
+python3 engines/build.py --platform linux --litert-library /absolute/path/libLiteRt.so
+```
+
+Skip cloning if the pinned checkout exists. Omit `--litert-library` when the build environment has the Python package.
+Output: `engines/build/linux/`, containing `libfah_engine.so`, `libfah_backend.so`, `libLiteRt.so`, and the LiteRT license.
+Runtime inference doesn't require Python. CPU inference needs `models/litert/pose.tflite`.
+See the [Linux build and video validation guide](engines/README.md#linuxでビルドする) (Japanese).
+
+## Integrate and validate
+
+The [C ABI guide](engines/README.md) covers packaging, lifecycle, coordinates, and host responsibilities.
+Hosts supply RGBA8 frames and manage capture, texture readback, and threading.
+See the [C example](engines/examples/check.c) and [C# wrapper](engines/examples/FahSession.cs).
+Actual Unity Editor, IL2CPP, and Godot plugin integration remain unvalidated.
+
+```sh
 cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --locked
-cargo clippy --manifest-path app/src/main/rust/Cargo.toml --all-targets --target aarch64-linux-android -- -D warnings
 ```
 
-Gradle builds the Rust static library through CMake using the committed Cargo lockfile.
-The app and `fah-check` link the same Rust pipeline and ncnn adapter.
-
-For the Rust migration checks, including video and APK tests, see [the recorded results](docs/rust-validation.json).
+This tests shared Rust layers without a GUI. Native inference checks are described in each platform guide.
+Recorded results include [Android](docs/rust-validation.json), [Windows](docs/windows-onnx-validation.json), [macOS](docs/macos-gpui-validation.json), and [Linux LiteRT](engines/linux/litert-validation.json).
+Parity and video smoke tests don't measure accuracy against ground-truth labels.
 
 ## Project structure
 
-| Path | Purpose |
+| Path | Responsibility |
 |---|---|
-| `tools/export.py` | Load the required FAH modules and convert them to ncnn. |
-| `tools/make_fixtures.py` | Generate test inputs and PyTorch reference outputs. |
-| `app/src/main/rust/src/android.rs` | Implement JNI entry points and bitmap locking. |
-| `crates/fah-ncnn/src/runtime.rs` | Own native runtime handles and copy tensor outputs into Rust. |
-| `backends/ncnn/cpp/bridge.cpp` | Adapt the ncnn runtime to C ABI calls and contain C++ exceptions. |
-| `backends/ncnn/cpp/runtime.cpp` | Load ncnn models, run inference, and split GPU processing. |
-| `backends/ncnn/cpp/vulkan_ops.cpp` | Implement custom Vulkan matrix multiplication, reduction, GELU, and LayerNorm. |
-| `crates/fah-core/src/pipeline.rs` | Detect hands, crop images, construct camera conditioning, restore coordinates, and track regions. |
-| `app/src/main/java/dev/fah/android/MainActivity.java` | Display the camera preview and joints. |
-| `crates/fah-ncnn/src/check.rs` | Run numerical comparisons and benchmarks on the device. |
+| `crates/fah-gui/` | Shared Windows/macOS GPUI interface |
+| `crates/fah-api/` | Common frame, inference, and tracking contracts |
+| `crates/fah-application/` | Sessions and desktop worker scheduling |
+| `crates/fah-core/` | Preprocessing, postprocessing, and tracking |
+| `crates/fah-input/` | Shared still-image input adapter |
+| `crates/fah-ncnn/`, `backends/ncnn/cpp/` | Rust ncnn adapter and C++/Vulkan runtime |
+| `crates/fah-litert/`, `crates/fah-linux-platform/` | LiteRT C API wrapper and Linux backend selection |
+| `crates/fah-apple-platform/`, `apple/` | Rust Apple adapter, Swift/Metal/Core ML implementation, vendored source |
+| `crates/fah-ffi/`, `engines/` | C ABI, headers, host examples, and packaging |
+| `windows/` | Windows entry point, ONNX inference, platform services, and native build |
+| `macos/` | macOS GPUI entry point and app bundle build |
+| `app/` | Android UI, Rust JNI bridge, and Gradle/CMake build |
+| `tools/`, `docs/` | Exporters, setup, architecture, and validation records |
+| `licenses/`, `NOTICE` | Third-party notices and model terms |
+| `models/`, `third_party/`, `artifacts/` | Local models, dependencies, and generated results; ignored by Git |
 
-## License
+See the [architecture guide](docs/architecture.md) (Japanese) for dependency boundaries and input ownership.
 
-The project code is licensed under Apache-2.0.
-Attributions for FAH, fah-metal, MLX, and ncnn are in [NOTICE](NOTICE) and `licenses/`.
-Models and converted weights remain subject to the FAH weights license.
-The `models/` and `third_party/` directories are excluded from Git.
+## License and model terms
+
+Project code is under [Apache-2.0](LICENSE). Third-party code retains its own terms; see [NOTICE](NOTICE) and [licenses](licenses/).
+This does **not** license model weights under Apache-2.0.
+
+The [FAH weights license](licenses/FAH-WEIGHTS.txt), including SAM/DINOv3 pass-through terms, covers pose and detector weights and converted exports.
+Research/noncommercial restrictions remain in ncnn, ONNX, Core ML, Metal, and LiteRT formats.
+Redistribution must include the weight license. Detector attribution includes FAH and Ultralytics YOLOv8; its terms also flag applicable AGPL-3.0 obligations.
+
+The bundled weight terms match upstream as checked on November 10, 2026.
+Check the [upstream weight terms](https://github.com/noahcao/FAH/blob/main/WEIGHTS_LICENSE) before distribution.
+A commercial game or plugin cannot rely on this repository's Apache license to use these weights.
+This review doesn't establish AGPL compliance for a particular application or clear third-party commercial rights.
+ONNX Runtime, CUDA/cuDNN, FFmpeg, ncnn, and LiteRT have separate distribution terms. Preserve notices for the actual binaries you distribute.
+Converting models or distributing them separately doesn't remove their restrictions.

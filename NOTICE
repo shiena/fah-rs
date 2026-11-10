@@ -50,7 +50,9 @@ follows:
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-Linux CPU inference uses LiteRT 2.3.0 (https://github.com/google-ai-edge/LiteRT).
+Android and Linux CPU pose inference uses LiteRT 2.3.0 (https://github.com/google-ai-edge/LiteRT).
 LiteRT is Copyright Google LLC and contributors, licensed under Apache-2.0.
 See licenses/LITERT-APACHE-2.0.txt. The optional libLiteRt.so distribution is
-obtained from the official ai-edge-litert 2.3.0 package.
+obtained from the official ai-edge-litert 2.3.0 package on Linux and the
+com.google.ai.edge.litert:litert:2.3.0 Maven AAR on Android.
+The Android AAR also carries Caffe notices; see licenses/LITERT-ANDROID.txt.

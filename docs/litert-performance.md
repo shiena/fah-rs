@@ -6,8 +6,8 @@ CPUは既存の検証入力5種類で精度検査を通過しました。
 今回のGPU Delegateは精度検査に失敗したため、採用対象にしていません。
 
 これは姿勢モデル単体の比較です。検出器、動画の追跡処理、GUIのFPSは計測していません。
-Androidアプリと共通C ABIの既定エンジンはncnnのままです。
-LiteRTの新しいCompiledModel APIとNPU経路は、この検証には含みません。
+この表は組み込み前の単体ベンチマークです。現在のAndroidアプリと共通C ABIでは、CPU選択時にLiteRTのCompiledModel APIで姿勢を推論し、検出器はncnnを使用します。[組み込み後の検証](android-litert-integration.md)を参照してください。
+この単体ベンチマークにはCompiledModel APIとNPU経路を含みません。NPUは現在の組み込みでも使用しません。
 
 Linuxの比較結果は[Steam Deckでの検証](linux-litert-performance.md)を参照してください。
 

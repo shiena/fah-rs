@@ -12,7 +12,7 @@ Rustの共通コアとプラットフォーム別の推論エンジンで、FAH-
 | プラットフォーム | アプリ・組み込み方法 | 推論エンジン | 検証範囲 |
 |---|---|---|---|
 | Windows 11 x64 | GPUIアプリ、C ABI | ONNX Runtime CUDA／DirectML／CPU、ncnn Vulkan | 画像・動画・USBカメラ。CUDA推論はcuDNN不足により未検証 |
-| Android arm64、API 26以降 | Androidアプリ、C ABI | ncnn Vulkan／CPU | 実機の画像・動画・カメラ |
+| Android arm64、API 26以降 | Androidアプリ、C ABI | ncnn Vulkan、LiteRT CPU姿勢推定＋ncnn CPU検出器 | 実機の画像・動画・カメラ |
 | macOS 15以降、Apple silicon | GPUIアプリ、C ABI | Metal姿勢推定＋Core ML検出器 | Apple M3の画像・動画・カメラ |
 | iOS 18以降、arm64 | ネイティブライブラリ、C ABI確認アプリ | Metal姿勢推定＋Core ML検出器 | iPhone 15 Proのサンプル画像。カメラは未検証 |
 | Linux x86_64 | C ABI、コマンドラインのサンプル | ncnn Vulkan、LiteRT CPU姿勢推定＋ncnn CPU検出器 | Steam Deckのサンプル動画 |
@@ -49,7 +49,7 @@ Android用ncnnライブラリの取得と`local.properties`の作成も行いま
 | Windows ONNX Runtime | `tools/export_onnx.py`。[Windows手順](windows/README_ja.md)を参照 |
 | Android／Linux Vulkan | `tools/setup.ps1`が生成するncnnファイルを使用 |
 | macOS／iOS | `tools/export_apple.py`で出力後、Macで変換。[Apple手順](apple/README.md#モデルを準備する)を参照 |
-| Linux CPU | 専用環境で`tools/export_litert.py`を実行。[LiteRT変換手順](docs/litert-performance.md#wslで変換する)を参照 |
+| Android／Linux CPU | 専用環境で`tools/export_litert.py`を実行。[LiteRT変換手順](docs/litert-performance.md#wslで変換する)を参照 |
 
 生成したモデルを実行先へコピーします。各形式には互換性がありません。
 この構成のエクスポーターではMANOやSAM 3D Bodyの追加取得は不要です。ただし、FAHの重みの制限は残ります。
@@ -88,7 +88,7 @@ rustup target add aarch64-linux-android
 
 `install`はAPKをビルドし、モデルを別途転送します。APKだけでは推論できません。
 [Androidの準備・操作・動画検証ガイド](app/README_ja.md)を参照してください。
-LiteRTの性能検証はAndroidアプリには組み込んでいません。
+CPUはLiteRT 2.3.0で姿勢を推論し、ncnnで検出します。インストール前に`models/litert/pose.tflite`も準備します。
 
 ### macOS
 
@@ -155,7 +155,7 @@ cargo test -p fah-core -p fah-api -p fah-application -p fah-input --release --lo
 | `crates/fah-core/` | 前処理、後処理、追跡 |
 | `crates/fah-input/` | 共通の静止画入力アダプター |
 | `crates/fah-ncnn/`、`backends/ncnn/cpp/` | RustのncnnアダプターとC++／Vulkanランタイム |
-| `crates/fah-litert/`、`crates/fah-linux-platform/` | LiteRT C APIラッパーとLinuxの推論方式選択 |
+| `crates/fah-litert/`、`crates/fah-ncnn-platform/`、`crates/fah-linux-platform/` | LiteRT C API、Android・Linux共通の推論方式選択、Linuxの入口 |
 | `crates/fah-apple-platform/`、`apple/` | RustのAppleアダプター、Swift／Metal／Core ML実装、移植元ソース |
 | `crates/fah-ffi/`、`engines/` | C ABI、ヘッダー、ホスト用サンプル、配布物の生成 |
 | `windows/` | Windowsの起動処理、ONNX推論、OS機能、ネイティブビルド |

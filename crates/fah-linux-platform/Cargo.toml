@@ -8,10 +8,4 @@ test = false
 doctest = false
 
 [dependencies]
-anyhow = "1"
-fah-api = { path = "../fah-api" }
-fah-application = { path = "../fah-application" }
-fah-core = { path = "../fah-core" }
-fah-ncnn = { path = "../fah-ncnn" }
-fah-litert = { path = "../fah-litert" }
-libc = "0.2"
+fah-ncnn-platform = { path = "../fah-ncnn-platform" }

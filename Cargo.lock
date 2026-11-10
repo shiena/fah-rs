@@ -1397,6 +1397,7 @@ dependencies = [
  "fah-application",
  "fah-linux-platform",
  "fah-ncnn",
+ "fah-ncnn-platform",
  "fah-windows",
  "serde_json",
 ]
@@ -1425,13 +1426,7 @@ dependencies = [
 name = "fah-linux-platform"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "fah-api",
- "fah-application",
- "fah-core",
- "fah-litert",
- "fah-ncnn",
- "libc",
+ "fah-ncnn-platform",
 ]
 
 [[package]]
@@ -1464,6 +1459,7 @@ dependencies = [
  "fah-core",
  "fah-input",
  "fah-ncnn",
+ "fah-ncnn-platform",
  "jni",
  "serde_json",
 ]
@@ -1476,6 +1472,19 @@ dependencies = [
  "fah-api",
  "fah-core",
  "serde_json",
+]
+
+[[package]]
+name = "fah-ncnn-platform"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-application",
+ "fah-core",
+ "fah-litert",
+ "fah-ncnn",
+ "libc",
 ]
 
 [[package]]

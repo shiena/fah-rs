@@ -138,3 +138,9 @@ GradleはCMakeからRustの静的ライブラリをビルドします。依存�
 
 Rust移植後の動画・APK検証結果は[検証データ](../docs/rust-validation.json)を参照します。
 
+
+## LiteRT CPU推論
+
+アプリにはGoogle MavenのLiteRT 2.3.0を同梱します。CPU選択時は姿勢をLiteRT、検出器をncnnで実行します。Vulkanは引き続きncnnです。
+`tools/device.ps1 -Action install`の前に、[変換手順](../docs/litert-performance.md#wslで変換する)で`models/litert/pose.tflite`を準備します。インストール時にこのモデルも別途転送します。
+[組み込み後の検証](../docs/android-litert-integration.md)を参照してください。従来の`check`はncnn単体を検証します。LiteRTはC ABI動画検証コマンドで確認します。

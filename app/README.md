@@ -67,7 +67,7 @@ The app's controls are in Japanese. Unlock the device and tap **カメラ** (Cam
 | **CPU/GPU** | Switch the inference backend. |
 
 CPU inference is faster on this device. The default backend is Vulkan.
-If GPU inference fails, the app retries on the CPU and displays **CPU（GPUエラー後）** (CPU after a GPU error).
+If GPU inference fails, the app retries on the CPU and displays **LiteRT CPU（GPUエラー後）** (CPU after a GPU error).
 Subsequent frames use the CPU. Use **CPU/GPU** to select the backend again.
 
 The SO-51A's older Adreno driver produced errors when camera rendering overlapped with long GPU operations.
@@ -142,3 +142,9 @@ The app and `fah-check` link the same Rust pipeline and ncnn adapter.
 
 For the Rust migration checks, including video and APK tests, see [the recorded results](../docs/rust-validation.json).
 
+
+## LiteRT CPU inference
+
+The app packages LiteRT 2.3.0 from Google Maven. CPU mode uses LiteRT for pose estimation and ncnn for detection. Vulkan remains ncnn.
+Prepare `models/litert/pose.tflite` with the [conversion guide](../docs/litert-performance.md#wslで変換する) before running `tools/device.ps1 -Action install`. The install script transfers this model separately.
+See [integrated validation](../docs/android-litert-integration.md) (Japanese). The existing `check` command benchmarks ncnn directly; use the C ABI video commands to test LiteRT.

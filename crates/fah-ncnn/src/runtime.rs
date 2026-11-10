@@ -16,7 +16,7 @@ extern "C" {
         detector: bool,
     ) -> *mut c_void;
     fn fah_runtime_destroy(runtime: *mut c_void);
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     fn fah_detector_create(path: *const c_char) -> *mut c_void;
     fn fah_error() -> *const c_char;
     #[cfg(any(target_os = "windows", target_os = "linux"))]
@@ -54,7 +54,7 @@ pub fn gpu_info() -> String {
 }
 impl Runtime {
     /// Load only the detector when a separate engine owns pose inference.
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn detector(path: &str) -> Result<Self> {
         let path = CString::new(path).map_err(|e| e.to_string())?;
         let ptr = unsafe { fah_detector_create(path.as_ptr()) };

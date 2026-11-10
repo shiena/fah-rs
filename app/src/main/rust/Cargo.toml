@@ -22,3 +22,4 @@ fah-ncnn = { path = "../../../../crates/fah-ncnn" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
+fah-ncnn-platform = { path = "../../../../crates/fah-ncnn-platform" }

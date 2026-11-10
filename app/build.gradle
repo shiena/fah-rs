@@ -1,4 +1,5 @@
 plugins { id 'com.android.application' }
+dependencies { implementation 'com.google.ai.edge.litert:litert:2.3.0' }
 android {
     namespace 'dev.fah.android'
     compileSdk 36
@@ -13,5 +14,6 @@ android {
         externalNativeBuild { cmake { cppFlags '-std=c++17'; arguments '-DANDROID_STL=c++_shared' } }
     }
     externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
+    sourceSets { main { assets.srcDir rootProject.file('licenses') } }
     buildTypes { release { minifyEnabled false; signingConfig signingConfigs.debug } }
 }

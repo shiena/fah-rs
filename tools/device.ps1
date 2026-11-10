@@ -18,6 +18,9 @@ function Adb {
 }
 Push-Location $root
 try {
+    if ($Action -eq 'install' -and !(Test-Path models/litert/pose.tflite)) {
+        throw 'Prepare models/litert/pose.tflite with tools/export_litert.py before installing (see docs/litert-performance.md).'
+    }
     $remote = '/data/local/tmp/fah-android'
     $appFiles = '/sdcard/Android/data/dev.fah.android/files'
     if ($Action -eq 'install' -or $Action -eq 'check' -or $Action -eq 'video') {
@@ -28,6 +31,8 @@ try {
         Adb install -r app/build/outputs/apk/debug/app-debug.apk
         Adb shell mkdir -p "$appFiles/models"
         Adb push models/pose.ncnn.param models/pose.ncnn.bin models/detector.ncnn.param models/detector.ncnn.bin models/uv_grid.f32 models/sample.png "$appFiles/models/"
+        Adb shell mkdir -p "$appFiles/models/litert"
+        Adb push models/litert/pose.tflite "$appFiles/models/litert/"
         Adb shell pm grant dev.fah.android android.permission.CAMERA
         Adb shell am start -n dev.fah.android/.MainActivity
     } elseif ($Action -eq 'check' -or $Action -eq 'video') {

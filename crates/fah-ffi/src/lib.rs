@@ -142,11 +142,7 @@ fn open(config: &Config) -> Result<Box<dyn TrackingSession>> {
     }
     #[cfg(target_os = "android")]
     {
-        Ok(Box::new(fah_application::Session::open(
-            models,
-            selected,
-            Arc::new(fah_ncnn::adapter::Backends),
-        )?))
+        fah_ncnn_platform::session(models, selected)
     }
     #[cfg(target_os = "ios")]
     {

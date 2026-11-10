@@ -60,7 +60,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(15, 20, 27));
         title = new TextView(this);
-        title.setText(useGpu?"FAH Android  ·  Vulkan":"FAH Android  ·  CPU");
+        title.setText(useGpu?"FAH Android  ·  Vulkan":"FAH Android  ·  LiteRT CPU");
         title.setTextSize(22); title.setTextColor(Color.WHITE); title.setPadding(24, 24, 24, 16);
         root.addView(title);
         status = new TextView(this);
@@ -102,7 +102,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         backend.setOnClickListener(v -> {
             if(!ready) return;
             generation++;ready=false;stopCamera();useGpu=!useGpu;
-            title.setText(useGpu?"FAH Android  ·  Vulkan":"FAH Android  ·  CPU");
+            title.setText(useGpu?"FAH Android  ·  Vulkan":"FAH Android  ·  LiteRT CPU");
             loadModels();
         });
         loadModels();
@@ -175,7 +175,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     if(destroyed||generation!=current) return;
                     overlay.result=result;overlay.fit=true;overlay.invalidate();
                     cpuFallback=result.optBoolean("cpu_fallback");
-                    if(cpuFallback) title.setText("FAH Android  ·  CPU（GPUエラー後）");
+                    if(cpuFallback) title.setText("FAH Android  ·  LiteRT CPU（GPUエラー後）");
                     double ms=result.optDouble("total_ms");
                     status.setText(String.format(Locale.US,"%d手  ·  %.1f ms / %.1f 推論FPS\n検出 %.1f ms  ·  姿勢 %.1f ms  ·  %s",
                         result.optJSONArray("hands").length(),ms,1000/ms,result.optDouble("detector_ms"),result.optDouble("pose_ms"),

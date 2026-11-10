@@ -44,6 +44,10 @@ def main():
     env = os.environ.copy()
     target = []
     if args.platform == "android":
+        sys.path.insert(0, str(ROOT / "tools"))
+        from android_litert import collect
+
+        collect(out)
         ndk = args.ndk or Path(env.get("ANDROID_NDK_HOME", ""))
         if not (ndk / "build/cmake/android.toolchain.cmake").is_file():
             parser.error("Supply --ndk or ANDROID_NDK_HOME")

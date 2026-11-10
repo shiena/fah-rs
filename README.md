@@ -12,7 +12,7 @@ This project builds on [FAH](https://github.com/noahcao/FAH) and [fah-metal](htt
 | Platform | App or integration | Inference | Validation scope |
 |---|---|---|---|
 | Windows 11 x64 | GPUI app; C ABI | ONNX Runtime CUDA / DirectML / CPU; ncnn Vulkan | Images, videos, USB cameras; CUDA inference unverified because cuDNN was missing |
-| Android arm64, API 26+ | Android app; C ABI | ncnn Vulkan / CPU | Device image, video, and camera checks |
+| Android arm64, API 26+ | Android app; C ABI | ncnn Vulkan; LiteRT CPU pose + ncnn CPU detector | Device image, video, and camera checks |
 | macOS 15+, Apple silicon | GPUI app; C ABI | Metal pose + Core ML detector | Apple M3 image, video, and camera checks |
 | iOS 18+, arm64 | Native library; C ABI validation app | Metal pose + Core ML detector | iPhone 15 Pro sample-image inference; camera unverified |
 | Linux x86_64 | C ABI; command-line example | ncnn Vulkan; LiteRT CPU pose + ncnn CPU detector | Steam Deck sample-video inference |
@@ -49,7 +49,7 @@ It also downloads Android ncnn libraries and writes `local.properties`. It doesn
 | Windows ONNX Runtime | `tools/export_onnx.py`; see the [Windows guide](windows/README.md) |
 | Android / Linux Vulkan | ncnn files from `tools/setup.ps1` |
 | macOS / iOS | `tools/export_apple.py`, then conversion on a Mac; see the [Apple guide](apple/README.md#モデルを準備する) (Japanese) |
-| Linux CPU | `tools/export_litert.py` in a dedicated environment; see the [LiteRT guide](docs/litert-performance.md#wslで変換する) (Japanese) |
+| Android / Linux CPU | `tools/export_litert.py` in a dedicated environment; see the [LiteRT guide](docs/litert-performance.md#wslで変換する) (Japanese) |
 
 Copy prepared models to the target platform. These formats aren't interchangeable.
 The configured exporters don't require an additional MANO or SAM 3D Body download. FAH weight restrictions still apply.
@@ -88,7 +88,7 @@ rustup target add aarch64-linux-android
 
 The install command builds the APK and transfers models separately. The APK alone isn't sufficient.
 See the [Android setup, controls, and video validation guide](app/README.md).
-The LiteRT benchmark is not integrated into the Android app.
+CPU inference uses LiteRT 2.3.0 for pose estimation and ncnn for detection. Prepare `models/litert/pose.tflite` before installation.
 
 ### macOS
 
@@ -155,7 +155,7 @@ Parity and video smoke tests don't measure accuracy against ground-truth labels.
 | `crates/fah-core/` | Preprocessing, postprocessing, and tracking |
 | `crates/fah-input/` | Shared still-image input adapter |
 | `crates/fah-ncnn/`, `backends/ncnn/cpp/` | Rust ncnn adapter and C++/Vulkan runtime |
-| `crates/fah-litert/`, `crates/fah-linux-platform/` | LiteRT C API wrapper and Linux backend selection |
+| `crates/fah-litert/`, `crates/fah-ncnn-platform/`, `crates/fah-linux-platform/` | LiteRT C API wrapper, shared Android/Linux backend selection, and Linux entry point |
 | `crates/fah-apple-platform/`, `apple/` | Rust Apple adapter, Swift/Metal/Core ML implementation, vendored source |
 | `crates/fah-ffi/`, `engines/` | C ABI, headers, host examples, and packaging |
 | `windows/` | Windows entry point, ONNX inference, platform services, and native build |

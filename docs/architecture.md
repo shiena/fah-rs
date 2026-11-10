@@ -111,14 +111,14 @@ cargo check -p fah-native -p fah-api -p fah-application -p fah-input --target aa
 
 APKは`app/build/outputs/apk/debug/app-debug.apk`に出力されます。CMakeは共通クレートのソースとマニフェストを監視します。共通層の変更時もRustライブラリを再ビルドします。
 
-Android側の接続点は`app/src/main/rust/src/platform.rs`です。`session`は共通の`TrackingSession`を返します。対応バックエンドはncnnのCPUとVulkanです。CUDAとDirectMLを指定するとエラーを返します。
+Android側の接続点は`app/src/main/rust/src/platform.rs`です。`session`は共通の`TrackingSession`を返します。Vulkanはncnn、CPUはLiteRTの姿勢推論とncnnの検出器を使用します。CUDAとDirectMLを指定するとエラーを返します。
 
 JNIはBitmapから`Frame::from_rgba`で所有権付きのフレームを生成します。行末のパディングを除去し、推論前にBitmapのロックを解除します。ホストがRGBA8データを用意する場合も、このAPIを使えます。`fah-input`の静止画像入力もAndroidのビルド対象です。カメラ取得は引き続きJava側が担当します。
 
 ## エンジンからC ABIを呼び出す
 
-`fah-ffi`は`Session`へ接続し、GPUIを依存に含めません。MacとiOSの推論アダプターは`fah-apple-platform`、Androidのバックエンド生成は`fah-ncnn::adapter`で既存ホストと共有します。
-Linuxは`fah-linux-platform`がncnn VulkanとCPU経路を選択します。CPU経路は`fah-litert`の姿勢推論とncnnの検出器を組み合わせます。
+`fah-ffi`は`Session`へ接続し、GPUIを依存に含めません。MacとiOSの推論アダプターは`fah-apple-platform`、Androidのバックエンド生成は`fah-ncnn-platform`で既存ホストと共有します。
+Linuxは`fah-linux-platform`から`fah-ncnn-platform`へ接続し、Androidと同じ方式でncnn VulkanとCPU経路を選択します。CPU経路は`fah-litert`の姿勢推論とncnnの検出器を組み合わせます。
 `fah-litert`はLiteRTの動的ライブラリ、モデル、CPUバッファーの所有権を管理し、GUI・入力機器・Pythonに依存しません。
 
 画像はホストが供給し、処理結果はコピー用の固定長構造体またはJSONで取得します。ビルドと所有権の契約は[エンジン連携手順](../engines/README.md)を参照してください。

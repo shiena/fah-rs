@@ -48,15 +48,15 @@ NULLやサイズ、バージョンは検証しますが、不正なメモリー�
 |---|---|---|---|
 | Windows | x64 | CUDA／DirectML／CPU／Vulkan | `windows/fah_engine.dll`、`fah_backend.dll` |
 | Linux | x86_64 | ncnn Vulkan／LiteRT CPU（姿勢）＋ncnn CPU（検出） | `linux/libfah_engine.so`、`libfah_backend.so`、`libLiteRt.so` |
-| Android | arm64-v8a、API 26以降 | Vulkan／CPU | `android/libfah_engine.so`、`libfah_backend.so`、`libc++_shared.so` |
+| Android | arm64-v8a、API 26以降 | ncnn Vulkan／LiteRT CPU（姿勢）＋ncnn CPU（検出） | `android/libfah_engine.so`、`libfah_backend.so`、`libc++_shared.so`、`libLiteRt.so` |
 | macOS | Apple silicon、macOS 15以降 | Metal／Core ML | `macos/libfah_engine.dylib`、`libFAHAppleNative.dylib`、リソースバンドル |
 | iOS | arm64、iOS 18以降 | Metal／Core ML | `ios/libfah_engine.a`とSwiftパッケージの`FAHAppleNative` |
 
 バックエンドの値は、Auto=0、CPU=1、Vulkan=2、CUDA=3、DirectML=4、Metal=5です。
 Autoの候補はWindowsがCUDA→DirectML→CPU、AndroidとLinuxがVulkan→CPU、AppleがMetalです。
 AppleのCPUフォールバックはありません。
-LinuxのCPU=1はLiteRTで姿勢を推論し、検出器はncnnで実行します。
-LinuxのJSONには`pose_engine`と`detector_engine`も含まれます。
+AndroidとLinuxのCPU=1はLiteRTで姿勢を推論し、検出器はncnnで実行します。
+AndroidとLinuxのJSONには`pose_engine`と`detector_engine`も含まれます。
 
 ### Windowsでビルドする
 
@@ -82,7 +82,8 @@ rustup target add aarch64-linux-android
 python engines/build.py --platform android --ndk /absolute/path/to/ndk/30.0.16248370
 ```
 
-生成した3つの`.so`を同じABI向けに組み込みます。既存の`libc++_shared.so`との版の競合を確認します。
+ビルド時に公式MavenのLiteRT 2.3.0 AARをハッシュ検証して取得します。生成した4つの`.so`を同じABI向けに組み込み、`LITERT-LICENSE.txt`も配布します。既存の`libc++_shared.so`との版の競合を確認します。
+CPU用に`models/litert/pose.tflite`も配置します。[Androidの検証手順](../docs/android-litert-integration.md)を参照してください。
 モデルはAPK内の圧縮アセットのまま渡さず、アプリから読み出せる実ファイルへ展開します。
 
 ### Linuxでビルドする

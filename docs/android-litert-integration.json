@@ -1,0 +1,251 @@
+{
+  "date": "2026-11-10",
+  "device": {
+    "model": "Sony SO-51A",
+    "android": "12",
+    "gpu": "Adreno 650",
+    "abi": "arm64-v8a"
+  },
+  "litert_version": "2.3.0",
+  "api": "CompiledModel C API",
+  "cpu_threads": 4,
+  "aar_sha256": "9508c6e9142646f0f2bc1fe68b3925fb470ee7ddd29114540339a04a8ab189dc",
+  "pose_model_sha256": "c59fa57341354537fe3672557251a95a656ceef2068a20278f870726bea68ca4",
+  "fixtures": [
+    {
+      "pass_index": 0,
+      "fixture": "fah-litert-native",
+      "median_ms": 222.7566405,
+      "max_errors": [
+        2.2649765e-06,
+        1.8253922e-07,
+        2.1457672e-06,
+        3.0189753e-05,
+        2.3841858e-07,
+        9.775162e-06
+      ]
+    },
+    {
+      "pass_index": 0,
+      "fixture": "hand_lower",
+      "median_ms": 223.902005,
+      "max_errors": [
+        3.3974648e-06,
+        1.1920929e-07,
+        7.033348e-06,
+        3.4600496e-05,
+        3.5762787e-07,
+        2.002716e-05
+      ]
+    },
+    {
+      "pass_index": 0,
+      "fixture": "hand_mirrored",
+      "median_ms": 223.188698,
+      "max_errors": [
+        1.3113022e-06,
+        7.264316e-08,
+        6.2584877e-06,
+        2.69413e-05,
+        2.3841858e-07,
+        5.2452087e-06
+      ]
+    },
+    {
+      "pass_index": 0,
+      "fixture": "hand_right",
+      "median_ms": 224.1860415,
+      "max_errors": [
+        1.3709068e-06,
+        7.4505806e-08,
+        2.8312206e-06,
+        2.4795532e-05,
+        2.3841858e-07,
+        3.671646e-05
+      ]
+    },
+    {
+      "pass_index": 0,
+      "fixture": "wide_crop",
+      "median_ms": 223.1155725,
+      "max_errors": [
+        1.0728836e-06,
+        6.7055225e-08,
+        3.3676624e-06,
+        2.193451e-05,
+        2.3841858e-07,
+        1.0728836e-05
+      ]
+    },
+    {
+      "pass_index": 1,
+      "fixture": "fah-litert-native",
+      "median_ms": 223.719245,
+      "max_errors": [
+        2.2649765e-06,
+        1.8253922e-07,
+        2.1457672e-06,
+        3.0189753e-05,
+        2.3841858e-07,
+        9.775162e-06
+      ]
+    },
+    {
+      "pass_index": 1,
+      "fixture": "hand_lower",
+      "median_ms": 224.00986949999998,
+      "max_errors": [
+        3.3974648e-06,
+        1.1920929e-07,
+        7.033348e-06,
+        3.4600496e-05,
+        3.5762787e-07,
+        2.002716e-05
+      ]
+    },
+    {
+      "pass_index": 1,
+      "fixture": "hand_mirrored",
+      "median_ms": 222.315156,
+      "max_errors": [
+        1.3113022e-06,
+        7.264316e-08,
+        6.2584877e-06,
+        2.69413e-05,
+        2.3841858e-07,
+        5.2452087e-06
+      ]
+    },
+    {
+      "pass_index": 1,
+      "fixture": "hand_right",
+      "median_ms": 222.506875,
+      "max_errors": [
+        1.3709068e-06,
+        7.4505806e-08,
+        2.8312206e-06,
+        2.4795532e-05,
+        2.3841858e-07,
+        3.671646e-05
+      ]
+    },
+    {
+      "pass_index": 1,
+      "fixture": "wide_crop",
+      "median_ms": 231.259635,
+      "max_errors": [
+        1.0728836e-06,
+        6.7055225e-08,
+        3.3676624e-06,
+        2.193451e-05,
+        2.3841858e-07,
+        1.0728836e-05
+      ]
+    }
+  ],
+  "apk": {
+    "passed": true,
+    "backend": "cpu",
+    "pose_engine": "litert",
+    "detector_engine": "ncnn",
+    "hands": 2,
+    "ui_label": "LiteRT CPU",
+    "runtime_and_license_packaged": true,
+    "android_aar_full_license_packaged": true
+  },
+  "cpu_video": {
+    "source": "third_party\\FAH\\docs\\assets\\videos\\test_video_selfie.mp4",
+    "start_seconds": 5,
+    "input_fps": 5,
+    "crop": [
+      0,
+      0,
+      640,
+      426
+    ],
+    "frames": 30,
+    "distinct_frames": 30,
+    "input_sha256": "e7d5765edd14c6fe0285a4bc9f6c736a19119b6697fb7d566ca4b359b34d6fb2",
+    "backend": "cpu",
+    "cpu_fallback": false,
+    "frames_with_hands": 30,
+    "hand_counts": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "detection_frames": [
+      1,
+      11,
+      21
+    ],
+    "median_ms": 223.7890885,
+    "passed": true,
+    "pose_engine": "litert",
+    "detector_engine": "ncnn"
+  },
+  "vulkan_video": {
+    "passed": true,
+    "frames": 30,
+    "frames_with_hands": 30,
+    "median_ms": 1566.7638275,
+    "pose_engine": "ncnn",
+    "detector_engine": "ncnn",
+    "finite_21_joints": true,
+    "cpu_fallback": false
+  },
+  "failure_cases": {
+    "missing_library": {
+      "passed": true,
+      "exit_code": 1,
+      "error": "cpu: CPU inference requires libLiteRt.so and models/litert/pose.tflite: Load LiteRT: /data/local/tmp/fah-litert-native/missing.so: dlopen failed: library \"/data/local/tmp/fah-litert-native/missing.so\" not found"
+    },
+    "missing_model": {
+      "passed": true,
+      "exit_code": 1,
+      "error": "INFO: [environment.cc:36] Creating LiteRT environment with options\nWARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorNotFound.\nINFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(libLiteRtGpuAccelerator.so).\nINFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(libLiteRtClGlAccelerator.so).\nINFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(libLiteRtOpenClAccelerator.so).\nINFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(libLiteRtWebGpuAccelerator.so).\nINFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(libLiteRtVulkanAccelerator.so).\nWARNING: [gpu_registry.cc:160] GPU accelerator could not be loaded and registered.\nINFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000787020ea20, name=CpuAccelerator\nINFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.\nERROR: Could not open '/data/local/tmp/fah-litert-native/no-pose/litert/pose.tflite'.\nERROR: The model allocation is null/empty\nINFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb40000787020ea20, name=CpuAccelerator\ncpu: CPU inference requires libLiteRt.so and models/litert/pose.tflite: LiteRT load model failed (status 500)"
+    },
+    "auto_cpu_fallback": {
+      "passed": true,
+      "backend": "cpu",
+      "pose_engine": "litert",
+      "hands": 2,
+      "warning": "vulkan: Failed to load pose"
+    }
+  },
+  "checks": {
+    "shared_rust_tests": 12,
+    "android_clippy": true,
+    "linux_shared_platform_check": true,
+    "apk_build": true,
+    "c_abi_build": true
+  },
+  "camera_tested": false
+}

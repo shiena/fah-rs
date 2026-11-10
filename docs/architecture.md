@@ -117,6 +117,8 @@ JNIはBitmapから`Frame::from_rgba`で所有権付きのフレームを生成�
 
 ## エンジンからC ABIを呼び出す
 
-`fah-ffi`は`Session`へ接続し、GPUIを依存に含めません。MacとiOSの推論アダプターは`fah-apple-platform`、AndroidとLinuxのバックエンド生成は`fah-ncnn::adapter`で既存ホストと共有します。
+`fah-ffi`は`Session`へ接続し、GPUIを依存に含めません。MacとiOSの推論アダプターは`fah-apple-platform`、Androidのバックエンド生成は`fah-ncnn::adapter`で既存ホストと共有します。
+Linuxは`fah-linux-platform`がncnn VulkanとCPU経路を選択します。CPU経路は`fah-litert`の姿勢推論とncnnの検出器を組み合わせます。
+`fah-litert`はLiteRTの動的ライブラリ、モデル、CPUバッファーの所有権を管理し、GUI・入力機器・Pythonに依存しません。
 
 画像はホストが供給し、処理結果はコピー用の固定長構造体またはJSONで取得します。ビルドと所有権の契約は[エンジン連携手順](../engines/README.md)を参照してください。

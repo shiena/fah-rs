@@ -47,7 +47,7 @@ NULLやサイズ、バージョンは検証しますが、不正なメモリー�
 | OS | 対象 | 推論バックエンド | 成果物 |
 |---|---|---|---|
 | Windows | x64 | CUDA／DirectML／CPU／Vulkan | `windows/fah_engine.dll`、`fah_backend.dll` |
-| Linux | x86_64 | Vulkan／CPU | `linux/libfah_engine.so`、`libfah_backend.so` |
+| Linux | x86_64 | ncnn Vulkan／LiteRT CPU（姿勢）＋ncnn CPU（検出） | `linux/libfah_engine.so`、`libfah_backend.so`、`libLiteRt.so` |
 | Android | arm64-v8a、API 26以降 | Vulkan／CPU | `android/libfah_engine.so`、`libfah_backend.so`、`libc++_shared.so` |
 | macOS | Apple silicon、macOS 15以降 | Metal／Core ML | `macos/libfah_engine.dylib`、`libFAHAppleNative.dylib`、リソースバンドル |
 | iOS | arm64、iOS 18以降 | Metal／Core ML | `ios/libfah_engine.a`とSwiftパッケージの`FAHAppleNative` |
@@ -55,6 +55,8 @@ NULLやサイズ、バージョンは検証しますが、不正なメモリー�
 バックエンドの値は、Auto=0、CPU=1、Vulkan=2、CUDA=3、DirectML=4、Metal=5です。
 Autoの候補はWindowsがCUDA→DirectML→CPU、AndroidとLinuxがVulkan→CPU、AppleがMetalです。
 AppleのCPUフォールバックはありません。
+LinuxのCPU=1はLiteRTで姿勢を推論し、検出器はncnnで実行します。
+LinuxのJSONには`pose_engine`と`detector_engine`も含まれます。
 
 ### Windowsでビルドする
 
@@ -87,6 +89,9 @@ python engines/build.py --platform android --ndk /absolute/path/to/ndk/30.0.1624
 
 GCCまたはClang、CMake 3.22以降、Ninja、Rust、Vulkan開発ヘッダーが必要です。
 ncnnはWindowsと同じリビジョンを使用します。
+LinuxのCPU経路にはLiteRT 2.3.0のネイティブライブラリも必要です。
+ビルド用のPython環境に`ai-edge-litert==2.3.0`を導入すると、ビルドスクリプトが`libLiteRt.so`を収集します。
+別の場所にある場合は`--litert-library /absolute/path/libLiteRt.so`を指定します。
 
 ```sh
 git clone --branch 20261020 --depth 1 --recurse-submodules --shallow-submodules https://github.com/Tencent/ncnn.git third_party/ncnn-src
@@ -95,9 +100,25 @@ python3 engines/build.py --platform linux
 
 既存の`third_party/ncnn-src`がある場合はcloneを省略します。
 使用するリビジョンは`7e36d25cb153092ba87a60530455c7376fedf452`です。
-生成した2つの`.so`は同じディレクトリへ置きます。`libfah_engine.so`は自身の配置先からバックエンドを読み込みます。
+生成した3つの`.so`は同じディレクトリへ置きます。`libfah_engine.so`は自身の配置先からバックエンドを読み込みます。
 実行先には互換性のあるglibc、libstdc++、libgompが必要です。Vulkanを使う場合はVulkanローダーとGPUドライバーも必要です。
 配布先より新しいglibcを要求しない環境でビルドします。別アーキテクチャ向けにビルドした成果物は使用できません。
+
+CPU用モデルは[LiteRTの変換手順](../docs/litert-performance.md#wslで変換する)で作成します。
+`FahConfig.models_utf8`が指すフォルダーに、次のファイルを配置します。
+
+- `pose.ncnn.param`、`pose.ncnn.bin`（Vulkan用）
+- `detector.ncnn.param`、`detector.ncnn.bin`（両経路で使用）
+- `uv_grid.f32`
+- `litert/pose.tflite`（CPU用、RoPE定数の修正を適用したモデル）
+
+実行時にPythonは不要です。RustからLiteRTのネイティブC APIを呼び出します。
+既定では`libfah_engine.so`と同じ場所の`libLiteRt.so`を読み込みます。
+`FAH_LITERT_LIBRARY`で別の絶対パスを指定できます。
+LiteRTはCPU経路を開くときだけ読み込みます。
+AutoはVulkanを優先し、初期化に失敗した場合はLiteRT CPUへ切り替えます。
+GPU実行後の既存のCPU回復処理もLiteRTを使用します。
+CPU用ライブラリやモデルが欠けている場合は、CPU初期化エラーを返します。
 
 Cホストの確認例です。最後の値はCPU=1、Vulkan=2、Auto=0です。
 

@@ -21,3 +21,6 @@ fah-apple-platform = { path = "../fah-apple-platform" }
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
 fah-ncnn = { path = "../fah-ncnn" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+fah-linux-platform = { path = "../fah-linux-platform" }

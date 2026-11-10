@@ -1,6 +1,7 @@
 """Build the GUI-free engine library and collect its platform dependencies."""
 
 import argparse
+import importlib.util
 import os
 import platform
 import shutil
@@ -28,6 +29,11 @@ def main():
     parser.add_argument("--ndk", type=Path)
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument(
+        "--litert-library",
+        type=Path,
+        help="Linux libLiteRt.so (tested with LiteRT 2.3.0)",
+    )
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")
@@ -85,6 +91,17 @@ def main():
     elif args.platform == "linux":
         if platform.system() != "Linux":
             parser.error("Build Linux on a Linux host or container")
+        litert = args.litert_library
+        if litert is None and env.get("FAH_LITERT_LIBRARY"):
+            litert = Path(env["FAH_LITERT_LIBRARY"])
+        if litert is None:
+            package = importlib.util.find_spec("ai_edge_litert")
+            if package and package.origin:
+                litert = Path(package.origin).parent / "libLiteRt.so"
+        if litert is None or not litert.is_file():
+            parser.error(
+                "Supply --litert-library /path/libLiteRt.so or install ai-edge-litert==2.3.0"
+            )
         native = BUILD / "linux-native"
         run(
             [
@@ -101,6 +118,9 @@ def main():
         run([args.cmake, "--build", native, "--parallel", args.jobs])
         env["FAH_NATIVE_DIR"] = str(native)
         shutil.copy2(native / "libfah_backend.so", out)
+        if litert.resolve() != (out / "libLiteRt.so").resolve():
+            shutil.copy2(litert, out / "libLiteRt.so")
+        shutil.copy2(ROOT / "licenses/LITERT-APACHE-2.0.txt", out)
     elif args.platform == "windows":
         native = ROOT / "windows/native/build"
         if not (native / "fah_backend.lib").is_file():

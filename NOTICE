@@ -49,3 +49,8 @@ follows:
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+
+Linux CPU inference uses LiteRT 2.3.0 (https://github.com/google-ai-edge/LiteRT).
+LiteRT is Copyright Google LLC and contributors, licensed under Apache-2.0.
+See licenses/LITERT-APACHE-2.0.txt. The optional libLiteRt.so distribution is
+obtained from the official ai-edge-litert 2.3.0 package.

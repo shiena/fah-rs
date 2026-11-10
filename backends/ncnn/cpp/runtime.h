@@ -9,7 +9,7 @@ using Outputs = std::array<ncnn::Mat, 6>;
 std::string gpuInfo();
 class Runtime {
 public:
-    Runtime(const std::string& directory, bool gpu, bool half = false, bool detector = false);
+    Runtime(const std::string& directory, bool gpu, bool half = false, bool detector = false, bool pose = true);
     Outputs pose(const ncnn::Mat& image, const ncnn::Mat& rays, const ncnn::Mat& condition);
     ncnn::Mat detect(const ncnn::Mat& image);
     std::string coverage() const;

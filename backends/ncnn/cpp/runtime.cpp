@@ -22,7 +22,7 @@ std::string gpuInfo() {
       << ",\"cooperative_matrix\":" << g.support_cooperative_matrix() << "}";
     return s.str();
 }
-Runtime::Runtime(const std::string& directory, bool gpu, bool half, bool detector) {
+Runtime::Runtime(const std::string& directory, bool gpu, bool half, bool detector, bool pose) {
     if (gpu && ncnn::get_gpu_count() == 0) throw std::runtime_error("Vulkan GPU unavailable");
     auto load = [&](ncnn::Net& net, const char* stem) {
         net.opt.num_threads = 4;
@@ -41,8 +41,8 @@ Runtime::Runtime(const std::string& directory, bool gpu, bool half, bool detecto
             net.load_model((base / (std::string(stem) + ".ncnn.bin")).c_str()))
             throw std::runtime_error(std::string("Failed to load ") + stem);
     };
-    load(poseNet, "pose");
-    if(gpu) {
+    if (pose) load(poseNet, "pose");
+    if(gpu && pose) {
         // Bound command-buffer duration on older Adreno drivers while the camera renders.
         for(int i=0;i<12;++i) {
             const std::string name="add_"+std::to_string(14+13*i);

@@ -136,7 +136,11 @@ fn open(config: &Config) -> Result<Box<dyn TrackingSession>> {
         let library = Path::new(unsafe { string(config.native_library_utf8)? });
         fah_apple_platform::session(fah_apple_platform::Native::load(library)?, models, selected)
     }
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(target_os = "linux")]
+    {
+        fah_linux_platform::session(models, selected)
+    }
+    #[cfg(target_os = "android")]
     {
         Ok(Box::new(fah_application::Session::open(
             models,

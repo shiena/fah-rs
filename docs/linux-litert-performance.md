@@ -39,7 +39,10 @@ LiteRT CPUは最終計測でncnn CPUより28.05%短い時間で推論できま�
 逆順の再計測では開始直後のVulkanが153msまで変動しました。
 ウォームアップを増やすと124msに戻りました。
 この端末ではVulkanを優先し、CPU実行を選ぶ場合にLiteRTを検討する方針が適切です。
-Linuxアプリおよび共通C ABIの推論エンジンは変更していません。
+この比較を基に、Linuxの共通C ABIへLiteRT CPUの姿勢推論を組み込みました。
+Autoはncnn Vulkanを優先します。CPU指定およびCPUへの回復時にはLiteRTを使用し、検出器はncnnのままです。
+ネイティブ実装の検証結果は[組み込み検証](../engines/linux/litert-validation.json)を参照してください。
+比較表はPythonのInterpreter APIによる比較時の記録です。組み込み版はネイティブCompiledModel APIをCPU指定で使用します。
 
 測定値、精度誤差、使用ライブラリのSHA-256は[検証結果](linux-litert-validation.json)に記録しています。
 Androidで必要だったRoPE定数のコピーを適用した同じLiteRTモデルを使用しました。

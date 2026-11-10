@@ -14,7 +14,7 @@ thread_local std::string lastError, text;
 struct Runtime {
     fah::Runtime net;
     std::vector<float> buffers[6];
-    Runtime(const char* path, bool gpu, bool half, bool detector): net(path,gpu,half,detector) {}
+    Runtime(const char* path, bool gpu, bool half, bool detector, bool pose=true): net(path,gpu,half,detector,pose) {}
 };
 }
 extern "C" {
@@ -28,6 +28,11 @@ FAH_EXPORT void* fah_runtime_create(const char* path,bool gpu,bool half,bool det
     catch(...) { lastError="Unknown ncnn error";return nullptr; }
 }
 FAH_EXPORT void fah_runtime_destroy(void* p) noexcept { delete static_cast<Runtime*>(p); }
+FAH_EXPORT void* fah_detector_create(const char* path) noexcept {
+    try { return new Runtime(path,false,false,true,false); }
+    catch(const std::exception& e) { lastError=e.what();return nullptr; }
+    catch(...) { lastError="Unknown ncnn error";return nullptr; }
+}
 FAH_EXPORT const char* fah_gpu_info() noexcept {
     try { text=fah::gpuInfo(); } catch(...) { text="{\"available\":false}"; }
     return text.c_str();

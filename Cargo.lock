@@ -1395,6 +1395,7 @@ dependencies = [
  "fah-api",
  "fah-apple-platform",
  "fah-application",
+ "fah-linux-platform",
  "fah-ncnn",
  "fah-windows",
  "serde_json",
@@ -1418,6 +1419,27 @@ dependencies = [
  "anyhow",
  "fah-api",
  "image",
+]
+
+[[package]]
+name = "fah-linux-platform"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fah-api",
+ "fah-application",
+ "fah-core",
+ "fah-litert",
+ "fah-ncnn",
+ "libc",
+]
+
+[[package]]
+name = "fah-litert"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libloading",
 ]
 
 [[package]]
